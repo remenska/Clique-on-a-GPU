@@ -13,7 +13,7 @@ __global__ void multiply_them(float *dest, float *a, float *b)
 
 multiply_them = mod.get_function("multiply_them")
 
-N = 1500
+N = 1600
 
 a = numpy.random.randn(N).astype(numpy.float32)
 b = numpy.random.randn(N).astype(numpy.float32)
