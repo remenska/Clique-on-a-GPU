@@ -13,8 +13,10 @@ __global__ void multiply_them(float *dest, float *a, float *b)
 
 multiply_them = mod.get_function("multiply_them")
 
-a = numpy.random.randn(400).astype(numpy.float32)
-b = numpy.random.randn(400).astype(numpy.float32)
+N = 1500
+
+a = numpy.random.randn(N).astype(numpy.float32)
+b = numpy.random.randn(N).astype(numpy.float32)
 
 dest = numpy.zeros_like(a)
 multiply_them(
