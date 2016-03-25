@@ -43,14 +43,25 @@ __global__ void quadratic_difference(int *correlations, int N, float *x, float *
 
 quadratic_difference= mod.get_function("quadratic_difference")
 
-N = 3000
+N = 4500
 
 x = np.random.randn(N).astype(np.float32)
 y = np.random.randn(N).astype(np.float32)
 z = np.random.randn(N).astype(np.float32)
 ct = np.random.randn(N).astype(np.float32)
 
+x_gpu = drv.mem_alloc(x.nbytes)
+y_gpu = drv.mem_alloc(y.nbytes)
+z_gpu = drv.mem_alloc(z.nbytes)
+ct_gpu = drv.mem_alloc(ct.nbytes)
+
+drv.memcpy_htod(x_gpu, x)
+drv.memcpy_htod(y_gpu, y)
+drv.memcpy_htod(z_gpu, z)
+drv.memcpy_htod(ct_gpu, ct)
+
 correlations = np.empty((N, N), np.int32)
+correlations_gpu = drv.mem_alloc(correlations.nbytes)
 
 block_size = 1024
 block_size_x = int(np.sqrt(block_size))
@@ -68,13 +79,15 @@ end = drv.Event()
 start.record() # start timing
 
 quadratic_difference(
-        drv.Out(correlations), np.int32(N), drv.In(x), drv.In(y), drv.In(z), drv.In(ct), 
+        correlations_gpu, np.int32(N), x_gpu, y_gpu, z_gpu, ct_gpu, 
         block=(block_size_x, block_size_y, 1), grid=(gridx, gridy))
 
 end.record() # end timing
 # calculate the run length
 end.synchronize()
 secs = start.time_till(end)*1e-3
+
+drv.memcpy_dtoh(correlations, correlations_gpu)
 
 print()
 print('Times taken is {0:.2e}s.'.format(secs))
