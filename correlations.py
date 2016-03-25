@@ -83,16 +83,23 @@ gridy = int(np.ceil(problem_size/block_size_y))
 start = drv.Event()
 end = drv.Event()
 
+pycuda.autoinit.context.synchronize()
+
 start.record() # start timing
 
 quadratic_difference(
         correlations_gpu, np.int32(N), x_gpu, y_gpu, z_gpu, ct_gpu, 
         block=(block_size_x, block_size_y, 1), grid=(gridx, gridy))
 
+pycuda.autoinit.context.synchronize()
+
 end.record() # end timing
 # calculate the run length
 end.synchronize()
 secs = start.time_till(end)*1e-3
+
+print()
+print('Time taken for computations is {0:.2e}s.'.format(secs))
 
 start_transfer = time.time()
 
@@ -103,9 +110,6 @@ end_transfer = time.time()
 print()
 print('Data transfer from device to host took {0:.2e}s.'.format(end_transfer -start_transfer))
 
-print()
-print('Times taken is {0:.2e}s.'.format(secs))
-print()
 #   correlations = correlations.reshape(N, N)
 #   print('correlations = ', correlations)
 #   print()
