@@ -43,7 +43,7 @@ __global__ void quadratic_difference(int *correlations, int N, float *x, float *
 
 quadratic_difference= mod.get_function("quadratic_difference")
 
-N = 1500
+N = 3000
 
 x = np.random.randn(N).astype(np.float32)
 y = np.random.randn(N).astype(np.float32)
