@@ -7,7 +7,7 @@ from pycuda.compiler import SourceModule
 
 
 mod = SourceModule("""
-__global__ void quadratic_difference(int *correlations, int N, int N_lightcrossing, int sliding_window_width, float *x, float *y, float *z, float *ct)
+__global__ void quadratic_difference(bool *correlations, int N, int N_lightcrossing, int sliding_window_width, float *x, float *y, float *z, float *ct)
 {
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     //  We want j to iterate over values near i, from i - N_light_crossing to i + N_light_crossing.
@@ -16,7 +16,7 @@ __global__ void quadratic_difference(int *correlations, int N, int N_lightcrossi
 
     if (i >= N || j < 0 || j >= N) return;
 
-    unsigned int pos1 = i * sliding_window_width + j;
+    unsigned int pos1 = i * sliding_window_width + j - i;
     // unsigned int pos2 = j * sliding_window_width + i;
 
     if (j==i){
@@ -45,7 +45,7 @@ __global__ void quadratic_difference(int *correlations, int N, int N_lightcrossi
 
 quadratic_difference= mod.get_function("quadratic_difference")
 
-N = 150000
+N = 3000000
 
 x = np.random.random(N).astype(np.float32)
 y = np.random.random(N).astype(np.float32)
@@ -75,7 +75,9 @@ N_light_crossing = 1500
 sliding_window_width = 2 * N_light_crossing
 # problem_size = N * sliding_window_width
 
-correlations = np.empty((N, sliding_window_width), np.int32)
+correlations = np.empty((N, sliding_window_width), 'b')
+print()
+print("Number of bytes needed for the correlation matrix = {0:.3e} ".format(correlations.nbytes))
 correlations_gpu = drv.mem_alloc(correlations.nbytes)
 
 block_size = 1024
