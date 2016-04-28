@@ -45,17 +45,24 @@ __global__ void quadratic_difference(bool *correlations, int N, int N_lightcross
 
 quadratic_difference= mod.get_function("quadratic_difference")
 
-N = 3000000
+N = 30000
 
 x = np.random.random(N).astype(np.float32)
 y = np.random.random(N).astype(np.float32)
 z = np.random.random(N).astype(np.float32)
 ct = np.random.random(N).astype(np.float32)
 
+start_malloc = time.time()
+
 x_gpu = drv.mem_alloc(x.nbytes)
 y_gpu = drv.mem_alloc(y.nbytes)
 z_gpu = drv.mem_alloc(z.nbytes)
 ct_gpu = drv.mem_alloc(ct.nbytes)
+
+end_malloc = time.time()
+
+print()
+print('Memory allocation on device took {0:.2e}s.'.format(end_malloc -start_malloc))
 
 start_transfer = time.time()
 
@@ -75,7 +82,7 @@ N_light_crossing = 1500
 sliding_window_width = 2 * N_light_crossing
 # problem_size = N * sliding_window_width
 
-correlations = np.empty((N, sliding_window_width), 'b')
+correlations = np.zeros((N, sliding_window_width), 'b')
 print()
 print("Number of bytes needed for the correlation matrix = {0:.3e} ".format(correlations.nbytes))
 correlations_gpu = drv.mem_alloc(correlations.nbytes)
@@ -118,33 +125,24 @@ end_transfer = time.time()
 print()
 print('Data transfer from device to host took {0:.2e}s.'.format(end_transfer -start_transfer))
 
-#   correlations = correlations.reshape(N, N)
-#   print('correlations = ', correlations)
-#   print()
-#   print('correlations.max() = {0}, correlations.argmax() = {1}'.format(correlations.max(), np.unravel_index(correlations.argmax(), correlations.shape)))
-#   # check for symmetry.
-#   print()
-#   print('Symmetry check, this should be zero: {0}'.format(np.sum(np.abs(correlations - correlations.T))))
-#   
-#   check = np.identity(correlations.shape[0], correlations.dtype)
-#   
-#   # Checkif output is correct.
-#   for i in range(check.shape[0]):
-#       for j in range(i+1, check.shape[1]):
-#           if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
-#             check[i, j] = 1
-#             check[j, i] = check[i, j]
-#   
-#   print()
-#   print()
-#   print('check = ', check)
-#   print()
-#   print('check.max() = {0}'.format(check.max()))
-#   print()
-#   print('Symmetry check, this should be zero: {0}'.format(np.sum(np.abs(check - check.T))))
-#   print()
-#   print()
-#   print()
-#   print('This should be close to zero: {0}'.format(np.max(np.abs(check - correlations))))
-#   print()
-#   print('check - correlations = ', check -correlations)
+print()
+print('correlations = ', correlations)
+
+check = np.zeros_like(correlations)
+
+# Checkif output is correct.
+for i in range(check.shape[0]):
+    for j in range(i - int(check.shape[1]/2), i + int(check.shape[1]/2)):
+        if (j < check.shape[0]) and (j >= 0):
+            if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
+                check[i, j - i +  int(check.shape[1]/2)] = 1
+
+print()
+print()
+print('check = ', check)
+print()
+print('check.max() = {0}'.format(check.max()))
+print()
+print('This should be close to zero: {0}'.format(np.sum(np.abs(check - correlations))))
+print()
+print('check - correlations = ', check -correlations)
