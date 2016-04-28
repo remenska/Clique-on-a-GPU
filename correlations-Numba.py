@@ -7,20 +7,22 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     i, j = cuda.grid(2)
 
-    n = correlations.shape[0]
-    m = correlations.shape[1]
+    n, m = correlations.shape
 
     l = i + j - int(m/2)
  
     if i < n and j < m and l > 0 and l < n:
-        diffct = ct[l] - ct[l]
-        diffx  = x[l] - x[l]
-        diffy  = y[l] - y[l]
-        diffz  = z[l] - z[l]
+        diffct = ct[i] - ct[l]
+        diffx  = x[i] - x[l]
+        diffy  = y[i] - y[l]
+        diffz  = z[i] - z[l]
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
             correlations[i, j] = 1
 
 def main():
+    start_computations = cuda.event(timing = True)
+    end_computations   = cuda.event(timing = True)
+
     N = 30000
 
     x = np.random.random(N).astype(np.float32)
@@ -59,20 +61,16 @@ def main():
     gridx = int(np.ceil(correlations.shape[0]/block_size_x))
     gridy = int(np.ceil(correlations.shape[1]/block_size_y))
 
-    start_computations = cuda.event(timing = True)
-
-    start_c = time.time()
+    start_computations.record()
 
     quadratic_difference[(gridx, gridy), (block_size_x, block_size_y)](correlations_gpu, x_gpu, y_gpu, z_gpu, ct_gpu)
 
-    end_computations = cuda.event(timing = True)
+    end_computations.record()
 
     end_computations.synchronize()
 
-    end_c = time.time()
-
     print()
-    print('Time taken for computations is {0:.3e}s.'.format(end_c - start_c))
+    print('Time taken for computations is {0:.3e}s.'.format(1e-3 * start_computations.elapsed_time(end_computations)))
 
     start_transfer = time.time()
 
@@ -82,8 +80,11 @@ def main():
 
     print()
     print('Data transfer from device to host took {0:.2e}s.'.format(end_transfer -start_transfer))
+
+    print()
+    print('correlations = ', correlations)
    
-    check = np.zeros(correlations.shape, correlations.dtype)
+    check = np.zeros_like(correlations)
    
     # Checkif output is correct.
     for i in range(check.shape[0]):
@@ -98,7 +99,7 @@ def main():
     print()
     print('check.max() = {0}'.format(check.max()))
     print()
-    print('This should be close to zero: {0}'.format(np.max(np.abs(check - correlations))))
+    print('This should be close to zero: {0}'.format(np.sum(np.abs(check - correlations))))
     print()
     print('check - correlations = ', check -correlations)
 
