@@ -52,12 +52,19 @@ y = np.random.random(N).astype(np.float32)
 z = np.random.random(N).astype(np.float32)
 ct = np.random.random(N).astype(np.float32)
 
-start_transfer = time.time()
+start_malloc = time.time()
 
 x_gpu = drv.mem_alloc(x.nbytes)
 y_gpu = drv.mem_alloc(y.nbytes)
 z_gpu = drv.mem_alloc(z.nbytes)
 ct_gpu = drv.mem_alloc(ct.nbytes)
+
+end_malloc = time.time()
+
+print()
+print('Memory allocation on device took {0:.2e}s.'.format(end_malloc -start_malloc))
+
+start_transfer = time.time()
 
 drv.memcpy_htod(x_gpu, x)
 drv.memcpy_htod(y_gpu, y)
@@ -67,7 +74,7 @@ drv.memcpy_htod(ct_gpu, ct)
 end_transfer = time.time()
 
 print()
-print('Data transfer from host to device plus memory allocation on device took {0:.2e}s.'.format(end_transfer -start_transfer))
+print('Data transfer from host to device took {0:.2e}s.'.format(end_transfer -start_transfer))
 
 # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
 N_light_crossing = 1500
@@ -75,7 +82,7 @@ N_light_crossing = 1500
 sliding_window_width = 2 * N_light_crossing
 # problem_size = N * sliding_window_width
 
-correlations = np.empty((N, sliding_window_width), 'b')
+correlations = np.zeros((N, sliding_window_width), 'b')
 print()
 print("Number of bytes needed for the correlation matrix = {0:.3e} ".format(correlations.nbytes))
 correlations_gpu = drv.mem_alloc(correlations.nbytes)
@@ -118,7 +125,10 @@ end_transfer = time.time()
 print()
 print('Data transfer from device to host took {0:.2e}s.'.format(end_transfer -start_transfer))
 
-check = np.zeros(correlations.shape, correlations.dtype)
+print()
+print('correlations = ', correlations)
+
+check = np.zeros_like(correlations)
 
 # Checkif output is correct.
 for i in range(check.shape[0]):
@@ -133,6 +143,6 @@ print('check = ', check)
 print()
 print('check.max() = {0}'.format(check.max()))
 print()
-print('This should be close to zero: {0}'.format(np.max(np.abs(check - correlations))))
+print('This should be close to zero: {0}'.format(np.sum(np.abs(check - correlations))))
 print()
 print('check - correlations = ', check -correlations)
