@@ -11,7 +11,7 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     l = i + j - int(m/2)
  
-    if i < n and j < m and l > 0 and l < n:
+    if i < n and j < m and l >= 0 and l < n:
         diffct = ct[i] - ct[l]
         diffx  = x[i] - x[l]
         diffy  = y[i] - y[l]
