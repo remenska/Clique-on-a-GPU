@@ -9,36 +9,34 @@ from pycuda.compiler import SourceModule
 mod = SourceModule("""
 __global__ void quadratic_difference(bool *correlations, int N, int N_lightcrossing, int sliding_window_width, float *x, float *y, float *z, float *ct)
 {
-    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
     //  We want j to iterate over values near i, from i - N_light_crossing to i + N_light_crossing.
     //  blockIdx.y * blockDim.y + threadIdx.y should take values from 0 to and possibly including 2 * N_lightcrossing.
-    int j = i + blockIdx.y * blockDim.y + threadIdx.y - N_lightcrossing;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (i >= N || j < 0 || j >= N) return;
+    int l = i + j - N_lightcrossing;
 
-    unsigned int pos1 = i * sliding_window_width + j - i;
-    // unsigned int pos2 = j * sliding_window_width + i;
+    if (i >= N || j >= sliding_window_width || l < 0 || l >= N) return;
 
-    if (j==i){
-      correlations[pos1] = 1;
-      // correlations[pos2] = 1;
-      return;
-    }
+    int pos = i * sliding_window_width + j;
 
-    float diffct = ct[i] - ct[j];
-    float diffx  = x[i] - x[j];
-    float diffy  = y[i] - y[j];
-    float diffz  = z[i] - z[j];
+    // if (j==i){
+    //  correlations[pos1] = 1;
+    //  // correlations[pos2] = 1;
+    //  return;
+    // }
 
+    float diffct = ct[i] - ct[l];
+    float diffx  = x[i] - x[l];
+    float diffy  = y[i] - y[l];
+    float diffz  = z[i] - z[l];
 
     if (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz){ 
-      correlations[pos1] = 1;
-      // correlations[pos2] = 1;
+      correlations[pos] = 1;
     }
     else{
-      correlations[pos1] = 0;
-      // correlations[pos2] = 0;
-   }
+      correlations[pos] = 0;
+    }
 
 }
 """)
