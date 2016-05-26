@@ -2,20 +2,48 @@ import numpy as np
 from numba import cuda, f4, void, boolean
 import time
 
+block_size = 1024
+block_size_x = int(np.sqrt(block_size))
+block_size_y = int(np.sqrt(block_size))
+
 @cuda.jit(void(boolean[:,:], f4[:], f4[:], f4[:], f4[:]))
 def quadratic_difference(correlations, x, y, z, ct):
-
+    tx = cuda.threadIdx.x
+    ty = cuda.threadIdx.y
+    
     i, j = cuda.grid(2)
 
     n, m = correlations.shape
 
     l = i + j - int(m/2)
  
+    # Suppose the thread block size = 1024 and we have square blocks, i.e. cuda.blockDim.x = cuda.blockDim.y,
+    # than we have to copy 64 values to shared memory.
+    # I'll separate the base_hits (values of i) and surrounding_hits (values of l).
+    base_hits = cuda.shared.array((block_size_x, 4), dtype=f4)
+
+    if i < n:
+        base_hits[tx, 0] = x[i]
+        base_hits[tx, 1] = y[i]
+        base_hits[tx, 2] = z[i]
+        base_hits[tx, 3] = ct[i]
+
+    surrounding_hits = cuda.shared.array((block_size_y, 4), dtype=f4)
+
+    if l >= 0 and l < n:
+        surrounding_hits[ty, 0] = x[l]
+        surrounding_hits[ty, 1] = y[l]
+        surrounding_hits[ty, 2] = z[l]
+        surrounding_hits[ty, 3] = ct[l]
+
+    cuda.syncthreads()
+
     if i < n and j < m and l >= 0 and l < n:
-        diffct = ct[i] - ct[l]
-        diffx  = x[i] - x[l]
-        diffy  = y[i] - y[l]
-        diffz  = z[i] - z[l]
+        diffct = base_hits[tx, 0] - surrounding_hits[ty, 0]
+        diffx  = base_hits[tx, 1] - surrounding_hits[ty, 1]
+        diffy  = base_hits[tx, 2] - surrounding_hits[ty, 2]
+        diffz  = base_hits[tx, 3] - surrounding_hits[ty, 3]
+
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
             correlations[i, j] = 1
 
@@ -53,10 +81,6 @@ def main():
     print("Number of bytes needed for the correlation matrix = {0:.3e} ".format(correlations.nbytes))
 
     correlations_gpu = cuda.to_device(correlations)
-
-    block_size = 1024
-    block_size_x = int(np.sqrt(block_size))
-    block_size_y = int(np.sqrt(block_size))
 
     gridx = int(np.ceil(correlations.shape[0]/block_size_x))
     gridy = int(np.ceil(correlations.shape[1]/block_size_y))
