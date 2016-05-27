@@ -15,8 +15,10 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     n, m = correlations.shape
 
-    l = i + j - int(m/2)
+    # l = i + j - int(m/2)
  
+    l = i + j
+
     # Suppose the thread block size = 1024 and we have square blocks, i.e. cuda.blockDim.x = cuda.blockDim.y,
     # than we have to copy 64 values to shared memory.
     # I'll separate the base_hits (values of i) and surrounding_hits (values of l).
@@ -72,8 +74,9 @@ def main():
 
     # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
     N_light_crossing = 1500
-    # We have a sliding window with size 2 * N_light_crossing to consider for correlations.
-    sliding_window_width = 2 * N_light_crossing
+
+    # This used to be 2 * N_light_crossing, but caused redundant calculations.
+    sliding_window_width = N_light_crossing
     # problem_size = N * sliding_window_width
 
     correlations = np.zeros((N, sliding_window_width), 'b')
@@ -112,10 +115,10 @@ def main():
    
     # Checkif output is correct.
     for i in range(check.shape[0]):
-        for j in range(i - int(check.shape[1]/2), i + int(check.shape[1]/2)):
+        for j in range(i, i + int(check.shape[1])):
             if (j < check.shape[0]) and (j >= 0):
                 if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
-                    check[i, j - i +  int(check.shape[1]/2)] = 1
+                    check[i, j - i] = 1
 
     print()
     print()
