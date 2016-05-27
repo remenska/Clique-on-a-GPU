@@ -22,29 +22,29 @@ def quadratic_difference(correlations, x, y, z, ct):
     # Suppose the thread block size = 1024 and we have square blocks, i.e. cuda.blockDim.x = cuda.blockDim.y,
     # than we have to copy 64 values to shared memory.
     # I'll separate the base_hits (values of i) and surrounding_hits (values of l).
-    base_hits = cuda.shared.array((block_size_x, 4), dtype=f4)
+    base_hits = cuda.shared.array((4, block_size_x), dtype=f4)
 
-    if i < n:
-        base_hits[tx, 0] = x[i]
-        base_hits[tx, 1] = y[i]
-        base_hits[tx, 2] = z[i]
-        base_hits[tx, 3] = ct[i]
+    if ty == 0 and i < n:
+        base_hits[0, tx] = x[i]
+        base_hits[1, tx] = y[i]
+        base_hits[2, tx] = z[i]
+        base_hits[3, tx] = ct[i]
 
-    surrounding_hits = cuda.shared.array((block_size_y, 4), dtype=f4)
+    surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
 
-    if l >= 0 and l < n:
-        surrounding_hits[ty, 0] = x[l]
-        surrounding_hits[ty, 1] = y[l]
-        surrounding_hits[ty, 2] = z[l]
-        surrounding_hits[ty, 3] = ct[l]
+    if tx == 0 and l >= 0 and l < n:
+        surrounding_hits[0, ty] = x[l]
+        surrounding_hits[1, ty] = y[l]
+        surrounding_hits[2, ty] = z[l]
+        surrounding_hits[3, ty] = ct[l]
 
     cuda.syncthreads()
 
     if i < n and j < m and l >= 0 and l < n:
-        diffct = base_hits[tx, 0] - surrounding_hits[ty, 0]
-        diffx  = base_hits[tx, 1] - surrounding_hits[ty, 1]
-        diffy  = base_hits[tx, 2] - surrounding_hits[ty, 2]
-        diffz  = base_hits[tx, 3] - surrounding_hits[ty, 3]
+        diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
+        diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
+        diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
+        diffct = base_hits[3, tx] - surrounding_hits[3, ty]
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
             correlations[i, j] = 1
@@ -53,7 +53,7 @@ def main():
     start_computations = cuda.event(timing = True)
     end_computations   = cuda.event(timing = True)
 
-    N = 30000
+    N = 5000
 
     x = np.random.random(N).astype(np.float32)
     y = np.random.random(N).astype(np.float32)
@@ -76,7 +76,7 @@ def main():
     N_light_crossing = 1500
 
     # This used to be 2 * N_light_crossing, but caused redundant calculations.
-    sliding_window_width = N_light_crossing
+    sliding_window_width =  N_light_crossing
     # problem_size = N * sliding_window_width
 
     correlations = np.zeros((N, sliding_window_width), 'b')
@@ -115,8 +115,8 @@ def main():
    
     # Checkif output is correct.
     for i in range(check.shape[0]):
-        for j in range(i, i + int(check.shape[1])):
-            if (j < check.shape[0]) and (j >= 0):
+        for j in range(i, i + check.shape[1]):
+            if j < check.shape[0]:
                 if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
                     check[i, j - i] = 1
 
