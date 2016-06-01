@@ -2,7 +2,7 @@ import numpy as np
 from numba import cuda, f4, void, boolean
 import time
 
-block_size = 1024
+block_size = 64
 block_size_x = int(np.sqrt(block_size))
 block_size_y = int(np.sqrt(block_size))
 
@@ -57,7 +57,7 @@ def main():
     start_computations = cuda.event(timing = True)
     end_computations   = cuda.event(timing = True)
 
-    N = 5000
+    N = 64
 
     x = np.random.random(N).astype(np.float32)
     y = np.random.random(N).astype(np.float32)
@@ -77,7 +77,7 @@ def main():
     print('Data transfer from host to device plus memory allocation on device took {0:.2e}s.'.format(end_transfer - start_transfer))
 
     # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
-    N_light_crossing = 1500
+    N_light_crossing = 64
 
     # This used to be 2 * N_light_crossing, but caused redundant calculations.
     sliding_window_width =  N_light_crossing
