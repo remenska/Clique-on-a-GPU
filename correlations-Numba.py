@@ -50,7 +50,7 @@ def quadratic_difference(correlations, x, y, z, ct):
         diffz = z[i] - z[j]
         diffct = ct[i] - ct[j]
 
-        if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
+        if diffct * diffct <= diffx * diffx + diffy * diffy + diffz * diffz:
             correlations[i, j] = 1
 
 def main():
@@ -83,7 +83,7 @@ def main():
     print('Data transfer from host to device plus memory allocation on device took {0:.2e}s.'.format(end_transfer - start_transfer))
 
     # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
-    N_light_crossing = 64
+    N_light_crossing = 20
 
     # This used to be 2 * N_light_crossing, but caused redundant calculations.
     sliding_window_width =  N_light_crossing
@@ -126,7 +126,7 @@ def main():
    
     # Checkif output is correct.
     for i in range(check.shape[0]):
-        for j in range(i, check.shape[1]):
+        for j in range(i+1, check.shape[1]):
             if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
                 check[i, j] = 1
 
