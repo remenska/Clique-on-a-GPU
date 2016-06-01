@@ -64,6 +64,12 @@ def main():
     z = np.random.random(N).astype(np.float32)
     ct = np.random.random(N).astype(np.float32)
 
+    # pickle the data for reuse
+    np.save("./x.pkl", x)
+    np.save("./y.pkl", y)
+    np.save("./z.pkl", z)
+    np.save("./ct.pkl", ct)
+
     start_transfer = time.time()
 
     x_gpu = cuda.to_device(x)
@@ -123,6 +129,10 @@ def main():
         for j in range(i, check.shape[1]):
             if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
                 check[i, j] = 1
+
+    # pickle the output for debug
+    np.save("./correlations.pkl", correlations)
+    np.save("./check.pkl", check)
 
     print()
     print()
