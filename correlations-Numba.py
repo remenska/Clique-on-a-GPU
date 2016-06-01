@@ -50,7 +50,7 @@ def quadratic_difference(correlations, x, y, z, ct):
         diffz = z[i] - z[j]
         diffct = ct[i] - ct[j]
 
-        if diffct * diffct <= diffx * diffx + diffy * diffy + diffz * diffz:
+        if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
             correlations[i, j] = 1
 
 def main():
