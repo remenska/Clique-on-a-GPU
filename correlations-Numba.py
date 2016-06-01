@@ -8,43 +8,47 @@ block_size_y = int(np.sqrt(block_size))
 
 @cuda.jit(void(boolean[:,:], f4[:], f4[:], f4[:], f4[:]))
 def quadratic_difference(correlations, x, y, z, ct):
-    tx = cuda.threadIdx.x
-    ty = cuda.threadIdx.y
+    tx = cuda.threadIdx.x  # numbers associated with each thread within a block
+    ty = cuda.threadIdx.y #  numbers associated with each thread within a block
     
-    i, j = cuda.grid(2)
+    i, j = cuda.grid(2) # global position of the thread
 
     n, m = correlations.shape
 
     # l = i + j - int(m/2)
  
-    l = i + j
+    l = i + j # i+m
 
     # Suppose the thread block size = 1024 and we have square blocks, i.e. cuda.blockDim.x = cuda.blockDim.y,
     # than we have to copy 64 values to shared memory.
     # I'll separate the base_hits (values of i) and surrounding_hits (values of l).
-    base_hits = cuda.shared.array((4, block_size_x), dtype=f4)
+    # base_hits = cuda.shared.array((4, block_size_x), dtype=f4)
 
-    if ty == 0 and i < n:
-        base_hits[0, tx] = x[i]
-        base_hits[1, tx] = y[i]
-        base_hits[2, tx] = z[i]
-        base_hits[3, tx] = ct[i]
+    # if ty == 0 and i < n:
+    #     base_hits[0, tx] = x[i]
+    #     base_hits[1, tx] = y[i]
+    #     base_hits[2, tx] = z[i]
+    #     base_hits[3, tx] = ct[i]
 
-    surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
+    # surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
 
-    if tx == 0 and l >= 0 and l < n:
-        surrounding_hits[0, ty] = x[l]
-        surrounding_hits[1, ty] = y[l]
-        surrounding_hits[2, ty] = z[l]
-        surrounding_hits[3, ty] = ct[l]
+    # if tx == 0 and l >= 0 and l < n:
+    #     surrounding_hits[0, ty] = x[l] # x[j]
+    #     surrounding_hits[1, ty] = y[l]
+    #     surrounding_hits[2, ty] = z[l]
+    #     surrounding_hits[3, ty] = ct[l]
 
-    cuda.syncthreads()
+    # cuda.syncthreads()
 
-    if i < n and j < m and l >= 0 and l < n:
-        diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
-        diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
-        diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
-        diffct = base_hits[3, tx] - surrounding_hits[3, ty]
+    if i < n and j < m and j>i:
+        # diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
+        # diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
+        # diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
+        # diffct = base_hits[3, tx] - surrounding_hits[3, ty]
+        diffx = x[i] - x[j]
+        diffy = y[i] - y[j]
+        diffz = z[i] - z[j]
+        diffct = ct[i] - ct[j]
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
             correlations[i, j] = 1
@@ -90,6 +94,7 @@ def main():
 
     start_computations.record()
 
+    # (156, 46) (32, 32)
     quadratic_difference[(gridx, gridy), (block_size_x, block_size_y)](correlations_gpu, x_gpu, y_gpu, z_gpu, ct_gpu)
 
     end_computations.record()
@@ -116,9 +121,8 @@ def main():
     # Checkif output is correct.
     for i in range(check.shape[0]):
         for j in range(i, i + check.shape[1]):
-            if j < check.shape[0]:
-                if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
-                    check[i, j - i] = 1
+            if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
+                check[i, j] = 1
 
     print()
     print()
