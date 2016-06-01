@@ -120,7 +120,7 @@ def main():
    
     # Checkif output is correct.
     for i in range(check.shape[0]):
-        for j in range(i, i + check.shape[1]):
+        for j in range(i, check.shape[1]):
             if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
                 check[i, j] = 1
 
