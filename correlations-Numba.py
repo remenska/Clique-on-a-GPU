@@ -38,6 +38,7 @@ def quadratic_difference(correlations, x, y, z, ct):
         base_hits[1, tx] = y[i]
         base_hits[2, tx] = z[i]
         base_hits[3, tx] = ct[i]
+        np.save("./base_hits.pkl", x)
 
     # surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
 
