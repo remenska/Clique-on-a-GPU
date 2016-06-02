@@ -50,7 +50,7 @@ def quadratic_difference(correlations, x, y, z, ct):
     #    surrounding_hits[3, ty] = ct[j]
 
     cuda.syncthreads()
-    np.save("./base_hits.pkl", x)
+    print("base hits", base_hits)
 
     #if i < n and j < m and l >= 0 and l < n:
     #if i < n and j < m:
