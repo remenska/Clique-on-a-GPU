@@ -2,18 +2,25 @@ import numpy as np
 from numba import cuda, f4, void, boolean
 import time
 
-block_size = 1024
+block_size = 64
 block_size_x = int(np.sqrt(block_size))
 block_size_y = int(np.sqrt(block_size))
 
 @cuda.jit(void(boolean[:,:], f4[:], f4[:], f4[:], f4[:]))
 def quadratic_difference(correlations, x, y, z, ct):
-    tx = cuda.threadIdx.x
-    ty = cuda.threadIdx.y
-    
-    i, j = cuda.grid(2)
+    tx = cuda.threadIdx.x  # numbers associated with each thread within a block
+    ty = cuda.threadIdx.y  # numbers associated with each thread within a block
 
-    n, m = correlations.shape
+    bx = cuda.blockIdx.x
+    by = cuda.blockIdx.y
+
+    bwx = cuda.blockDim.x
+    bwy = cuda.blockDim.y
+
+    
+    i, j = cuda.grid(2) # global position of the thread
+
+    n, m = correlations.shape  # n = N, m = window size
 
     # l = i + j - int(m/2)
  
@@ -24,44 +31,53 @@ def quadratic_difference(correlations, x, y, z, ct):
     # I'll separate the base_hits (values of i) and surrounding_hits (values of l).
     base_hits = cuda.shared.array((4, block_size_x), dtype=f4)
 
-    if ty == 0 and i < n:
+    # if ty == 0 and i < n:
+
+    if i == tx + (bx + 1) * bwx and ty == 0: 
         base_hits[0, tx] = x[i]
         base_hits[1, tx] = y[i]
         base_hits[2, tx] = z[i]
         base_hits[3, tx] = ct[i]
 
-    surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
+    # surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
 
     #if tx == 0 and l >= 0 and l < n:
-    if tx ==0 and j < m
-        surrounding_hits[0, ty] = x[j]
-        surrounding_hits[1, ty] = y[j]
-        surrounding_hits[2, ty] = z[j]
-        surrounding_hits[3, ty] = ct[j]
+    # if tx ==0 and j < m
+    #    surrounding_hits[0, ty] = x[j]
+    #    surrounding_hits[1, ty] = y[j]
+    #    surrounding_hits[2, ty] = z[j]
+    #    surrounding_hits[3, ty] = ct[j]
 
     cuda.syncthreads()
 
     #if i < n and j < m and l >= 0 and l < n:
-    if i < n and j < m:
-        diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
-        diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
-        diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
-        diffct = base_hits[3, tx] - surrounding_hits[3, ty]
+    #if i < n and j < m:
+    if i == tx + (bx + 1) * bwx and j == ty + (by + 1) * bwy:
+        diffx  = base_hits[0, tx] - base_hits[0, ty]
+        diffy  = base_hits[1, tx] - base_hits[1, ty]
+        diffz  = base_hits[2, tx] - base_hits[2, ty]
+        diffct = base_hits[3, tx] - base_hits[3, ty]
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
-            correlations[i, j] = 1
+            if j>i:
+                correlations[i, j] = 1
 
 def main():
     start_computations = cuda.event(timing = True)
     end_computations   = cuda.event(timing = True)
 
-    N = 5000
+    N = 64
 
     x = np.random.random(N).astype(np.float32)
     y = np.random.random(N).astype(np.float32)
     z = np.random.random(N).astype(np.float32)
     ct = np.random.random(N).astype(np.float32)
 
+    # pickle the data for reuse
+    np.save("./x.pkl", x)
+    np.save("./y.pkl", y)
+    np.save("./z.pkl", z)
+    np.save("./ct.pkl", ct)
     start_transfer = time.time()
 
     x_gpu = cuda.to_device(x)
@@ -75,7 +91,7 @@ def main():
     print('Data transfer from host to device plus memory allocation on device took {0:.2e}s.'.format(end_transfer - start_transfer))
 
     # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
-    N_light_crossing = 1500
+    N_light_crossing = 20
 
     # This used to be 2 * N_light_crossing, but caused redundant calculations.
     sliding_window_width =  N_light_crossing
@@ -117,11 +133,13 @@ def main():
    
     # Checkif output is correct.
     for i in range(check.shape[0]):
-        for j in range(i, i + check.shape[1]):
-            if j < check.shape[0]:
-                if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
-                    check[i, j - i] = 1
+        for j in range(i + 1, check.shape[1]):
+            if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
+                check[i, j] = 1
 
+
+    np.save("./correlations.pkl", correlations)
+    np.save("./check.pkl", check)
     print()
     print()
     print('check = ', check)
