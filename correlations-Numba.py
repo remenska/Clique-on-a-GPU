@@ -33,7 +33,7 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     # if ty == 0 and i < n:
 
-    if i == tx + bx * bwx and ty == 0 and tx < bwx: 
+    if i == tx + bx * bwx and ty == 0 and i < n: 
         base_hits[0, tx] = x[i]
         base_hits[1, tx] = y[i]
         base_hits[2, tx] = z[i]
@@ -52,7 +52,7 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     #if i < n and j < m and l >= 0 and l < n:
     #if i < n and j < m:
-    if i == ( tx + bx * bwx )and j == ( ty + by * bwy ) and tx < bwx and ty < bwy:
+    if i == ( tx + bx * bwx )and j == ( ty + by * bwy ) and  i < n and j < m:
         diffx  = base_hits[0, tx] - base_hits[0, ty]
         diffy  = base_hits[1, tx] - base_hits[1, ty]
         diffz  = base_hits[2, tx] - base_hits[2, ty]
