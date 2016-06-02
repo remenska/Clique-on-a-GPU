@@ -17,7 +17,7 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     # l = i + j - int(m/2)
  
-    l = i + j
+    #l = i + j
 
     # Suppose the thread block size = 1024 and we have square blocks, i.e. cuda.blockDim.x = cuda.blockDim.y,
     # than we have to copy 64 values to shared memory.
@@ -32,15 +32,17 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
 
-    if tx == 0 and l >= 0 and l < n:
-        surrounding_hits[0, ty] = x[l]
-        surrounding_hits[1, ty] = y[l]
-        surrounding_hits[2, ty] = z[l]
-        surrounding_hits[3, ty] = ct[l]
+    #if tx == 0 and l >= 0 and l < n:
+    if tx ==0 and j < m
+        surrounding_hits[0, ty] = x[j]
+        surrounding_hits[1, ty] = y[j]
+        surrounding_hits[2, ty] = z[j]
+        surrounding_hits[3, ty] = ct[j]
 
     cuda.syncthreads()
 
-    if i < n and j < m and l >= 0 and l < n:
+    #if i < n and j < m and l >= 0 and l < n:
+    if i < n and j < m:
         diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
         diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
         diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
