@@ -59,7 +59,7 @@ def quadratic_difference(correlations, x, y, z, ct):
         diffct = base_hits[3, tx] - base_hits[3, ty]
 
         if diffct * diffct <= diffx * diffx + diffy * diffy + diffz * diffz:
-            if j>i:
+            if j>=i:
                 correlations[i, j] = 1
 
 def main():
