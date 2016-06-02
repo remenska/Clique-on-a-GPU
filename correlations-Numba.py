@@ -2,7 +2,7 @@ import numpy as np
 from numba import cuda, f4, void, boolean
 import time
 
-block_size = 64
+block_size = 9
 block_size_x = int(np.sqrt(block_size))
 block_size_y = int(np.sqrt(block_size))
 
@@ -56,10 +56,10 @@ def quadratic_difference(correlations, x, y, z, ct):
     #if i < n and j < m and l >= 0 and l < n:
     #if i < n and j < m:
     if i == ( tx + bx * bwx ) and jj == ( ty + by * bwy ) and  i < n and jj < m and jj>i:
-        diffx  = base_hits[0, tx] - base_hits[0, ty]
-        diffy  = base_hits[1, tx] - base_hits[1, ty]
-        diffz  = base_hits[2, tx] - base_hits[2, ty]
-        diffct = base_hits[3, tx] - base_hits[3, ty]
+        diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
+        diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
+        diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
+        diffct = base_hits[3, tx] - surrounding_hits[3, ty]
 
         if diffct * diffct <= diffx * diffx + diffy * diffy + diffz * diffz:
             if jj>i:
@@ -69,7 +69,7 @@ def main():
     #start_computations = cuda.event(timing = True)
     #end_computations   = cuda.event(timing = True)
 
-    N = 4096
+    N = 81
 
     x = np.random.random(N).astype(np.float32)
     y = np.random.random(N).astype(np.float32)
@@ -94,7 +94,7 @@ def main():
     #print('Data transfer from host to device plus memory allocation on device took {0:.2e}s.'.format(end_transfer - start_transfer))
 
     # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
-    N_light_crossing = 1024
+    N_light_crossing = 54
 
     # This used to be 2 * N_light_crossing, but caused redundant calculations.
     sliding_window_width =  N_light_crossing
