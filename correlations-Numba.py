@@ -17,13 +17,13 @@ def quadratic_difference(correlations, x, y, z, ct):
     bwx = cuda.blockDim.x
     bwy = cuda.blockDim.y
 
-    i, j = cuda.grid(2)  # global position of the thread
+    i, jj = cuda.grid(2)  # global position of the thread
 
     n, m = correlations.shape    # n = N, m = sliding_window
 
     # l = i + j - int(m/2)
  
-    l = i + j
+    l = i + jj
 
     # Suppose the thread block size = 1024 and we have square blocks, i.e. cuda.blockDim.x = cuda.blockDim.y,
     # than we have to copy 64 values to shared memory.
@@ -38,7 +38,7 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
 
-    if j == ty + by*bwy and tx == 0 and j<m and l<min(m + i, n):
+    if jj == ty + by*bwy and tx == 0 and jj<m and l<min(m + i, n):
         surrounding_hits[0, ty] = x[l]
         surrounding_hits[1, ty] = y[l]
         surrounding_hits[2, ty] = z[l]
@@ -46,19 +46,23 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     cuda.syncthreads()
 
+    # if tx == 2 and ty == 2 and bx == 0 and by == 8:
+    #    from pdb import set_trace
+    #    set_trace()
+
     #if i < n and j < m and l >= 0 and l < n and j>i:
-    if i == ( tx + bx * bwx ) and j == ( ty + by * bwy ) and i < n and j < m and l<min(m + i, n) and j>i:
+    if i == ( tx + bx * bwx ) and jj == ( ty + by * bwy ) and i < n and jj < m and l<min(m + i, n):
         diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
         diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
         diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
         diffct = base_hits[3, tx] - surrounding_hits[3, ty]
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
-            correlations[i, j - i] = 1
+            correlations[i, jj - i] = 1
 
 def main():
-    start_computations = cuda.event(timing = True)
-    end_computations   = cuda.event(timing = True)
+    # start_computations = cuda.event(timing = True)
+    # end_computations   = cuda.event(timing = True)
 
     N = 81
 
@@ -100,16 +104,16 @@ def main():
     gridx = int(np.ceil(correlations.shape[0]/block_size_x))
     gridy = int(np.ceil(correlations.shape[1]/block_size_y))
 
-    start_computations.record()
+    #start_computations.record()
 
     quadratic_difference[(gridx, gridy), (block_size_x, block_size_y)](correlations_gpu, x_gpu, y_gpu, z_gpu, ct_gpu)
 
-    end_computations.record()
+    #end_computations.record()
 
-    end_computations.synchronize()
+    #end_computations.synchronize()
 
     print()
-    print('Time taken for computations is {0:.3e}s.'.format(1e-3 * start_computations.elapsed_time(end_computations)))
+    #print('Time taken for computations is {0:.3e}s.'.format(1e-3 * start_computations.elapsed_time(end_computations)))
 
     start_transfer = time.time()
 
