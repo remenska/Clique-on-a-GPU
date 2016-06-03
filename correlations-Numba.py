@@ -60,7 +60,7 @@ def quadratic_difference(correlations, x, y, z, ct):
         diffct = base_hits[3, tx] - ct[my_win]
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
-            correlations[i, jj - i] = 1
+            correlations[i, jj] = 1
 
     # if tx == 2 and ty == 2 and bx == 1 and by == 0:
     #    from pdb import set_trace
