@@ -8,8 +8,8 @@ block_size_y = int(np.sqrt(block_size))
 
 @cuda.jit(void(boolean[:,:], f4[:], f4[:], f4[:], f4[:]))
 def quadratic_difference(correlations, x, y, z, ct):
-    tx = cuda.threadIdx.x
-    ty = cuda.threadIdx.y
+    tx = cuda.threadIdx.x # numbers associated with each thread within a block
+    ty = cuda.threadIdx.y # numbers associated with each thread within a block
     
     i, j = cuda.grid(2)
 
@@ -24,7 +24,7 @@ def quadratic_difference(correlations, x, y, z, ct):
     # I'll separate the base_hits (values of i) and surrounding_hits (values of l).
     base_hits = cuda.shared.array((4, block_size_x), dtype=f4)
 
-    if ty == 0 and i < n:
+    if i == tx + bx * bwx and ty == 0 and i < n:
         base_hits[0, tx] = x[i]
         base_hits[1, tx] = y[i]
         base_hits[2, tx] = z[i]
@@ -32,7 +32,7 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
 
-    if tx == 0 and l >= 0 and l < n:
+    if j == ty + by*bwy and tx == 0 and j<m and l<min(n,m+i):
         surrounding_hits[0, ty] = x[l]
         surrounding_hits[1, ty] = y[l]
         surrounding_hits[2, ty] = z[l]
@@ -40,14 +40,14 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     cuda.syncthreads()
 
-    if i < n and j < m and l >= 0 and l < n:
+    if i < n and j < m and l >= 0 and l < n and j>i:
         diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
         diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
         diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
         diffct = base_hits[3, tx] - surrounding_hits[3, ty]
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
-            correlations[i, j] = 1
+            correlations[i, j - i] = 1
 
 def main():
     start_computations = cuda.event(timing = True)
