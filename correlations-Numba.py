@@ -23,7 +23,7 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     # l = i + j - int(m/2)
  
-    l = i
+    l = i + jj
 
     # Suppose the thread block size = 1024 and we have square blocks, i.e. cuda.blockDim.x = cuda.blockDim.y,
     # than we have to copy 64 values to shared memory.
