@@ -19,18 +19,18 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     i, jj = cuda.grid(2)  # global position of the thread
 
-    n, m = correlations.shape    # n = N, m = sliding_window
+    nn, m = correlations.shape    # n = N, m = sliding_window
 
     # l = i + j - int(m/2)
  
-    l = i + jj
+    #ll = i + jj # every thread is rewriting this!
 
     # Suppose the thread block size = 1024 and we have square blocks, i.e. cuda.blockDim.x = cuda.blockDim.y,
     # than we have to copy 64 values to shared memory.
     # I'll separate the base_hits (values of i) and surrounding_hits (values of l).
     base_hits = cuda.shared.array((4, block_size_x), dtype=f4)
 
-    if i == tx + bx * bwx and ty == 0 and i < n:
+    if i == tx + bx * bwx and ty == 0 and i < nn:
         base_hits[0, tx] = x[i]
         base_hits[1, tx] = y[i]
         base_hits[2, tx] = z[i]
@@ -38,20 +38,16 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
 
-    if jj == ty + by*bwy and tx == 0 and jj<m and l<min(m + i, n):
-        surrounding_hits[0, ty] = x[l]
-        surrounding_hits[1, ty] = y[l]
-        surrounding_hits[2, ty] = z[l]
-        surrounding_hits[3, ty] = ct[l]
+    if jj == ty + by*bwy and tx == 0 and jj<m and i+jj<min(m + i, nn):
+        surrounding_hits[0, ty] = x[i+jj]
+        surrounding_hits[1, ty] = y[i+jj]
+        surrounding_hits[2, ty] = z[i+jj]
+        surrounding_hits[3, ty] = ct[i+jj]
 
     cuda.syncthreads()
 
-    # if tx == 2 and ty == 2 and bx == 0 and by == 8:
-    #    from pdb import set_trace
-    #    set_trace()
-
     #if i < n and j < m and l >= 0 and l < n and j>i:
-    if i == ( tx + bx * bwx ) and jj == ( ty + by * bwy ) and i < n and jj < m and l<min(m + i, n):
+    if i == ( tx + bx * bwx ) and jj == ( ty + by * bwy ) and i < nn and jj < m and i+jj<min(m + i, nn):
         diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
         diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
         diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
@@ -59,6 +55,11 @@ def quadratic_difference(correlations, x, y, z, ct):
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
             correlations[i, jj - i] = 1
+
+    # if tx == 2 and ty == 2 and bx == 0 and by == 8:
+    #    from pdb import set_trace
+    #    set_trace()
+
 
 def main():
     # start_computations = cuda.event(timing = True)
