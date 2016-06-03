@@ -47,8 +47,9 @@ def quadratic_difference(correlations, x, y, z, ct):
     #     surrounding_hits[2, ty] = z[l]
     #     surrounding_hits[3, ty] = ct[l]
 
+    l = min(m + i, n)
+
     if jj == ty + by*bwy and tx == 0 and jj <m:
-        l = min(m + i, n)
         surrounding_hits[0, ty] = x[l]
         surrounding_hits[1, ty] = y[l]
         surrounding_hits[2, ty] = z[l]
@@ -60,7 +61,7 @@ def quadratic_difference(correlations, x, y, z, ct):
     #    set_trace()
     #if i < n and j < m and l >= 0 and l < n:
     #if i < n and j < m:
-    if i == ( tx + bx * bwx ) and jj == ( ty + by * bwy ) and  i < n and jj < m and jj>i:
+    if i == ( tx + bx * bwx ) and jj == ( ty + by * bwy ) and  i < n and jj < m:
         diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
         diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
         diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
