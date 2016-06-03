@@ -36,22 +36,27 @@ def quadratic_difference(correlations, x, y, z, ct):
         base_hits[2, tx] = z[i]
         base_hits[3, tx] = ct[i]
 
-    surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
+    # surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
 
-    if jj == ty + by*bwy and i == tx + bx * bwx and  jj<m and my_win<min(m + i, nn):
-        surrounding_hits[0, ty] = x[my_win]  # not really shared, they are rewriting it here... first  position [0, 1, 2] then [1,2,3] then [2,3,4] per block
-        surrounding_hits[1, ty] = y[my_win]
-        surrounding_hits[2, ty] = z[my_win]
-        surrounding_hits[3, ty] = ct[my_win]
+    # if jj == ty + by*bwy and i == tx + bx * bwx and  jj<m and my_win<min(m + i, nn):
+    #     # not really shared, they are rewriting it here... first  position [0, 1, 2] then [1,2,3] then [2,3,4] per block
+    #     surrounding_hits[0, ty] = x[my_win]
+    #     surrounding_hits[1, ty] = y[my_win]
+    #     surrounding_hits[2, ty] = z[my_win]
+    #     surrounding_hits[3, ty] = ct[my_win]
 
     cuda.syncthreads()
 
     #if i < n and j < m and l >= 0 and l < n and j>i:
     if i == ( tx + bx * bwx ) and jj == ( ty + by * bwy ) and i < nn and jj < m and my_win<min(m + i, nn):
-        diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
-        diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
-        diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
-        diffct = base_hits[3, tx] - surrounding_hits[3, ty]
+        # diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
+        # diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
+        # diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
+        # diffct = base_hits[3, tx] - surrounding_hits[3, ty]
+        diffx  = base_hits[0, tx] - x[my_win]
+        diffy  = base_hits[1, tx] - y[my_win]
+        diffz  = base_hits[2, tx] - z[my_win]
+        diffct = base_hits[3, tx] - ct[my_win]
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
             correlations[i, jj - i] = 1
