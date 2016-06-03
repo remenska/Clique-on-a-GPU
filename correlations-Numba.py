@@ -38,8 +38,8 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
 
-    if jj == ty + by*bwy and and i == tx + bx * bwx and  jj<m and my_win<min(m + i, nn):
-        surrounding_hits[0, ty] = x[my_win]
+    if jj == ty + by*bwy and i == tx + bx * bwx and  jj<m and my_win<min(m + i, nn):
+        surrounding_hits[0, ty] = x[my_win]  # not really shared, they are rewriting it here... first  position [0, 1, 2] then [1,2,3] then [2,3,4] per block
         surrounding_hits[1, ty] = y[my_win]
         surrounding_hits[2, ty] = z[my_win]
         surrounding_hits[3, ty] = ct[my_win]
