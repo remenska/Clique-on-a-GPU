@@ -20,7 +20,7 @@ def quadratic_difference(correlations, x, y, z, ct):
     
     i, jj = cuda.grid(2) # global position of the thread
 
-    n, m = correlations.shape  # n = N, m = window size
+    n, m = correlations.shape  # n = N, m = sliding_window
 
     # l = i + j - int(m/2)
  
@@ -39,8 +39,15 @@ def quadratic_difference(correlations, x, y, z, ct):
         base_hits[2, tx] = z[i]
         base_hits[3, tx] = ct[i]
 
-
+    l = max(m+i, m)  # this should be calculated inside th if statement, so not by every thread
+    
     surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
+
+    # if tx == 0 and jj = ty + by * bwy and tx == 0:
+    #     surrounding_hits[0, ty] = x[l]
+    #     surrounding_hits[1, ty] = y[l]
+    #     surrounding_hits[2, ty] = z[l]
+    #     surrounding_hits[3, ty] = ct[l]
 
     if jj == ty + by*bwy and tx == 0 and jj <m:
     # if tx ==0 and j < m
@@ -133,12 +140,13 @@ def main():
     print('correlations = ', correlations)
    
     check = np.zeros_like(correlations)
-   
+    sliding_window = check.shape[1]
     # Checkif output is correct.
     for i in range(check.shape[0]):
-        for j in range(i+1, check.shape[1]+1):
-            if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
-                check[i, j - i -1] = 1
+        for j in range(i , max(sliding_window + i, sliding_window)):
+            if j < check.shape[0]:
+                if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
+                    check[i, j - i] = 1
 
 
     np.save("./correlations.pkl", correlations)
