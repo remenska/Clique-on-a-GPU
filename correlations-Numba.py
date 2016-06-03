@@ -38,8 +38,6 @@ def quadratic_difference(correlations, x, y, z, ct):
         base_hits[1, tx] = y[i]
         base_hits[2, tx] = z[i]
         base_hits[3, tx] = ct[i]
-
-    l = max(m+i, m)  # this should be calculated inside th if statement, so not by every thread
     
     surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
 
@@ -50,11 +48,11 @@ def quadratic_difference(correlations, x, y, z, ct):
     #     surrounding_hits[3, ty] = ct[l]
 
     if jj == ty + by*bwy and tx == 0 and jj <m:
-    # if tx ==0 and j < m
-        surrounding_hits[0, ty] = x[jj]
-        surrounding_hits[1, ty] = y[jj]
-        surrounding_hits[2, ty] = z[jj]
-        surrounding_hits[3, ty] = ct[jj]
+        l = min(m + i, n)
+        surrounding_hits[0, ty] = x[l]
+        surrounding_hits[1, ty] = y[l]
+        surrounding_hits[2, ty] = z[l]
+        surrounding_hits[3, ty] = ct[l]
 
     cuda.syncthreads()
     #if tx == 2 and bx == 0 and ty == 3 and by == 1:
@@ -70,7 +68,7 @@ def quadratic_difference(correlations, x, y, z, ct):
 
         if diffct * diffct <= diffx * diffx + diffy * diffy + diffz * diffz:
             if jj>i:
-                correlations[i, jj] = 1
+                correlations[i, jj - i] = 1
 
 def main():
     #start_computations = cuda.event(timing = True)
