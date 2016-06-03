@@ -38,7 +38,7 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
 
-    if j == ty + by*bwy and tx == 0 and j<m:
+    if j == ty + by*bwy and tx == 0 and j<m and l<min(m + i, n):
         surrounding_hits[0, ty] = x[l]
         surrounding_hits[1, ty] = y[l]
         surrounding_hits[2, ty] = z[l]
@@ -47,7 +47,7 @@ def quadratic_difference(correlations, x, y, z, ct):
     cuda.syncthreads()
 
     #if i < n and j < m and l >= 0 and l < n and j>i:
-    if i == ( tx + bx * bwx ) and j == ( ty + by * bwy ) and i < n and j < m and l<min(n, m + i) and j>i and l<min(m+i,n):
+    if i == ( tx + bx * bwx ) and j == ( ty + by * bwy ) and i < n and j < m and l<min(m + i, n) and j>i:
         diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
         diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
         diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
