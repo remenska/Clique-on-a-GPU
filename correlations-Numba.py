@@ -23,7 +23,7 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     # l = i + j - int(m/2)
  
-    ll = i + jj
+    my_win = i + jj
 
     # Suppose the thread block size = 1024 and we have square blocks, i.e. cuda.blockDim.x = cuda.blockDim.y,
     # than we have to copy 64 values to shared memory.
@@ -38,25 +38,25 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
 
-    if jj == ty + by*bwy and tx == 0 and jj<m and ll<min(m + i, nn):
-        surrounding_hits[0, ty] = x[ll]
-        surrounding_hits[1, ty] = y[ll]
-        surrounding_hits[2, ty] = z[ll]
-        surrounding_hits[3, ty] = ct[ll]
+    if jj == ty + by*bwy and jj<m and my_win<min(m + i, nn):
+        surrounding_hits[0, ty] = x[my_win]
+        surrounding_hits[1, ty] = y[my_win]
+        surrounding_hits[2, ty] = z[my_win]
+        surrounding_hits[3, ty] = ct[my_win]
 
     cuda.syncthreads()
 
     #if i < n and j < m and l >= 0 and l < n and j>i:
-    if i == ( tx + bx * bwx ) and jj == ( ty + by * bwy ) and i < nn and jj < m and ll<min(m + i, nn):
+    if i == ( tx + bx * bwx ) and jj == ( ty + by * bwy ) and i < nn and jj < m and my_win<min(m + i, nn):
         diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
         diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
         diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
         diffct = base_hits[3, tx] - surrounding_hits[3, ty]
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
-            correlations[i, jj - i] = bx+by
+            correlations[i, jj - i] = 1
 
-    # if tx == 1 and ty == 0 and bx == 1 and by == 8:
+    # if tx == 2 and ty == 2 and bx == 1 and by == 0:
     #    from pdb import set_trace
     #    set_trace()
 
