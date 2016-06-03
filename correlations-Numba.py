@@ -11,9 +11,15 @@ def quadratic_difference(correlations, x, y, z, ct):
     tx = cuda.threadIdx.x # numbers associated with each thread within a block
     ty = cuda.threadIdx.y # numbers associated with each thread within a block
     
-    i, j = cuda.grid(2)
+    bx = cuda.blockIdx.x
+    by = cuda.blockIdx.y
 
-    n, m = correlations.shape
+    bwx = cuda.blockDim.x
+    bwy = cuda.blockDim.y
+
+    i, j = cuda.grid(2)  # global position of the thread
+
+    n, m = correlations.shape    # n = N, m = sliding_window
 
     # l = i + j - int(m/2)
  
