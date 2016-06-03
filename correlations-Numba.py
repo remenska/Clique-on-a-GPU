@@ -2,7 +2,7 @@ import numpy as np
 from numba import cuda, f4, void, boolean
 import time
 
-block_size = 1024
+block_size = 9
 block_size_x = int(np.sqrt(block_size))
 block_size_y = int(np.sqrt(block_size))
 
@@ -53,12 +53,17 @@ def main():
     start_computations = cuda.event(timing = True)
     end_computations   = cuda.event(timing = True)
 
-    N = 5000
+    N = 81
 
     x = np.random.random(N).astype(np.float32)
     y = np.random.random(N).astype(np.float32)
     z = np.random.random(N).astype(np.float32)
     ct = np.random.random(N).astype(np.float32)
+
+    np.save("./x.pkl", x)
+    np.save("./y.pkl", y)
+    np.save("./z.pkl", z)       
+    np.save("./ct.pkl", ct)
 
     start_transfer = time.time()
 
@@ -73,7 +78,7 @@ def main():
     print('Data transfer from host to device plus memory allocation on device took {0:.2e}s.'.format(end_transfer - start_transfer))
 
     # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
-    N_light_crossing = 1500
+    N_light_crossing = 27
 
     # This used to be 2 * N_light_crossing, but caused redundant calculations.
     sliding_window_width =  N_light_crossing
@@ -120,6 +125,9 @@ def main():
                 if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
                     check[i, j - i] = 1
 
+
+    np.save("./correlations.pkl", correlations)
+    np.save("./check.pkl", check)
     print()
     print()
     print('check = ', check)
