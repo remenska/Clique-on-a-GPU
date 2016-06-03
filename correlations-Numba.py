@@ -54,7 +54,7 @@ def quadratic_difference(correlations, x, y, z, ct):
         diffct = base_hits[3, tx] - surrounding_hits[3, ty]
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
-            correlations[i, jj - i] = i
+            correlations[i, jj - i] = bx
 
     # if tx == 1 and ty == 0 and bx == 1 and by == 8:
     #    from pdb import set_trace
