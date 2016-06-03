@@ -143,10 +143,9 @@ def main():
     sliding_window = check.shape[1]
     # Checkif output is correct.
     for i in range(check.shape[0]):
-        for j in range(i , max(sliding_window + i, sliding_window)):
-            if j < check.shape[0]:
-                if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
-                    check[i, j - i] = 1
+        for j in range(i , min(sliding_window + i, check.shape[0])):
+            if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
+                check[i, j - i] = 1
 
 
     np.save("./correlations.pkl", correlations)
