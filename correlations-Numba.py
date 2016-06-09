@@ -36,7 +36,18 @@ def quadratic_difference(correlations, x, y, z, ct):
         base_hits[2, tx] = z[i]
         base_hits[3, tx] = ct[i]
 
-    # surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
+    surrounding_hits = cuda.shared.array((4, block_size_x + block_size_y - 1), dtype=f4)  # array will the indexes: i+by*bwy,..., i+j
+
+    # for starters, let all the surrounding hits be copied by the same thread [0,0] within a threadblock (upper-left corner)
+    if tx == 0 and i==tx + bx*bwx and ty == 0 and jj == ty + by*bwy and i + jj < nn:
+    # and (ty + by*bwy) < min(m, nn-(tx + bx*bwx)):
+        end_length = min(block_size_x + block_size_y - 1, nn - (bx*bwx + by*bwy))
+        end_border = min((bx*bwx + by*bwy + (block_size_x) + block_size_y - 1), nn)
+        surrounding_hits[0, 0: end_length] = x[ (bx*bwx + by*bwy) : end_border ]
+        surrounding_hits[1, 0: end_length] = y[ (bx*bwx + by*bwy) : end_border ]
+        surrounding_hits[2, 0: end_length] = z[ (bx*bwx + by*bwy) : end_border ]
+        surrounding_hits[3, 0: end_length] = ct[ (bx*bwx + by*bwy) : end_border ]
+
 
     # if jj == ty + by*bwy and i == tx + bx * bwx and  jj<m and my_win<min(m + i, nn):
     #     # not really shared, they are rewriting it here... first  position [0, 1, 2] then [1,2,3] then [2,3,4] per block
