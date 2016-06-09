@@ -63,9 +63,9 @@ def quadratic_difference(correlations, x, y, z, ct):
             correlations[i, jj] = 1
 
 
-    if tx == 2 and ty == 1 and bx == 0 and by == 0:
-        from pdb import set_trace
-        set_trace()
+    # if tx == 2 and ty == 1 and bx == 0 and by == 0:
+    #     from pdb import set_trace
+    #     set_trace()
 
     # if tx == 2 and ty == 2 and bx == 1 and by == 0:
     #    from pdb import set_trace
