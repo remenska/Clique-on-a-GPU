@@ -39,14 +39,15 @@ def quadratic_difference(correlations, x, y, z, ct):
     surrounding_hits = cuda.shared.array((4, block_size_x + block_size_y - 1), dtype=f4)  # array will the indexes: i+by*bwy,..., i+j
 
     # for starters, let all the surrounding hits be copied by the same thread [0,0] within a threadblock (upper-left corner)
-    if tx == 0 and i==tx + bx*bwx and ty == 0 and jj == ty + by*bwy and i + jj < nn:
+    if tx == 0 and i==tx + bx*bwx and ty == 0 and jj == ty + by*bwy:
     # and (ty + by*bwy) < min(m, nn-(tx + bx*bwx)):
-        end_length = min(block_size_x + block_size_y - 1, nn - (bx*bwx + by*bwy))
+        end_length = min(block_size_x + block_size_y - 1, max(nn - (bx*bwx + by*bwy), 0)) # PHEW THIS is going negative without max(.., 0)
         end_border = min((bx*bwx + by*bwy + (block_size_x) + block_size_y - 1), nn)
         surrounding_hits[0, 0: end_length] = x[ (bx*bwx + by*bwy) : end_border ]
         surrounding_hits[1, 0: end_length] = y[ (bx*bwx + by*bwy) : end_border ]
         surrounding_hits[2, 0: end_length] = z[ (bx*bwx + by*bwy) : end_border ]
         surrounding_hits[3, 0: end_length] = ct[ (bx*bwx + by*bwy) : end_border ]
+        surrounding_hits[:, end_length: block_size_x + block_size_y -1] = 0
 
 
     # if jj == ty + by*bwy and i == tx + bx * bwx and  jj<m and my_win<min(m + i, nn):
@@ -78,9 +79,9 @@ def quadratic_difference(correlations, x, y, z, ct):
     #     from pdb import set_trace
     #     set_trace()
 
-    # if tx == 2 and ty == 2 and bx == 1 and by == 0:
-    #    from pdb import set_trace
-    #    set_trace()
+    if bx == 19 and by == 7 and tx == 0 and ty == 0:
+       from pdb import set_trace
+       set_trace()
 
 
 def main():
