@@ -48,7 +48,7 @@ def quadratic_difference(correlations, x, y, z, ct):
     cuda.syncthreads()
 
     #if i < n and j < m and l >= 0 and l < n and j>i:
-    if i == ( tx + bx * bwx ) and i < nn and jj < min(m + i, nn) and jj >= i:
+    if i == ( tx + bx * bwx ) and i < nn and jj = (ty + by * bwy) and jj < min(m + i, nn) and jj >= i:
     #and my_win<min(m + i, nn):
         # diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
         # diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
