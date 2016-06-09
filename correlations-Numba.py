@@ -5,7 +5,7 @@ import time
 block_size = 9
 block_size_x = int(np.sqrt(block_size))
 block_size_y = int(np.sqrt(block_size))
-
+shared_mem_size = int(block_size_x + block_size_y - 1)
 @cuda.jit(void(boolean[:,:], f4[:], f4[:], f4[:], f4[:]))
 def quadratic_difference(correlations, x, y, z, ct):
     tx = cuda.threadIdx.x # numbers associated with each thread within a block
@@ -36,18 +36,18 @@ def quadratic_difference(correlations, x, y, z, ct):
         base_hits[2, tx] = z[i]
         base_hits[3, tx] = ct[i]
 
-    surrounding_hits = cuda.shared.array((4, block_size_x + block_size_y - 1), dtype=f4)  # array will the indexes: i+by*bwy,..., i+j
+    surrounding_hits = cuda.shared.array((4, shared_mem_size), dtype=f4)  # array will the indexes: i+by*bwy,..., i+j
 
     # for starters, let all the surrounding hits be copied by the same thread [0,0] within a threadblock (upper-left corner)
     if tx == 0 and i==tx + bx*bwx and ty == 0 and jj == ty + by*bwy:
     # and (ty + by*bwy) < min(m, nn-(tx + bx*bwx)):
-        end_length = min(block_size_x + block_size_y - 1, max(nn - (bx*bwx + by*bwy), 0)) # PHEW THIS is going negative without max(.., 0)
-        end_border = min((bx*bwx + by*bwy + (block_size_x) + block_size_y - 1), nn)
+        end_length = min(shared_mem_size, max(nn - (bx*bwx + by*bwy), 0)) # PHEW THIS is going negative without max(.., 0)
+        end_border = min((bx*bwx + by*bwy + shared_mem_size), nn)
         surrounding_hits[0, 0: end_length] = x[ (bx*bwx + by*bwy) : end_border ]
         surrounding_hits[1, 0: end_length] = y[ (bx*bwx + by*bwy) : end_border ]
         surrounding_hits[2, 0: end_length] = z[ (bx*bwx + by*bwy) : end_border ]
         surrounding_hits[3, 0: end_length] = ct[ (bx*bwx + by*bwy) : end_border ]
-        surrounding_hits[:, end_length: block_size_x + block_size_y -1] = 0
+        surrounding_hits[:, end_length: shared_mem_size] = 0
 
 
     # if jj == ty + by*bwy and i == tx + bx * bwx and  jj<m and my_win<min(m + i, nn):
