@@ -66,10 +66,14 @@ def quadratic_difference(correlations, x, y, z, ct):
         # diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
         # diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
         # diffct = base_hits[3, tx] - surrounding_hits[3, ty]
-        diffx  = base_hits[0, tx] - x[i + jj]
-        diffy  = base_hits[1, tx] - y[i + jj]
-        diffz  = base_hits[2, tx] - z[i + jj]
-        diffct = base_hits[3, tx] - ct[i + jj]
+        # diffx  = base_hits[0, tx] - x[i + jj]
+        # diffy  = base_hits[1, tx] - y[i + jj]
+        # diffz  = base_hits[2, tx] - z[i + jj]
+        # diffct = base_hits[3, tx] - ct[i + jj]
+        diffx  = base_hits[0, tx] - surrounding_hits[0, tx + ty]
+        diffy  = base_hits[1, tx] - surrounding_hits[1, tx + ty]
+        diffz  = base_hits[2, tx] - surrounding_hits[2, tx + ty]
+        diffct = base_hits[3, tx] - surrounding_hits[3, tx + ty]
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
             correlations[i, jj] = 1
@@ -79,9 +83,9 @@ def quadratic_difference(correlations, x, y, z, ct):
     #     from pdb import set_trace
     #     set_trace()
 
-    if bx == 19 and by == 7 and tx == 0 and ty == 0:
-       from pdb import set_trace
-       set_trace()
+    # if bx == 26 and by == 8 and tx == 0 and ty == 0:
+    #    from pdb import set_trace
+    #    set_trace()
 
 
 def main():
