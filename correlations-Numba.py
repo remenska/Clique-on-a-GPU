@@ -48,19 +48,24 @@ def quadratic_difference(correlations, x, y, z, ct):
     cuda.syncthreads()
 
     #if i < n and j < m and l >= 0 and l < n and j>i:
-    if i == ( tx + bx * bwx ) and i < nn and jj == (ty + by * bwy) and jj < min(m + i, nn) and jj >= i:
+    if i == ( tx + bx * bwx ) and i < nn and jj == (ty + by * bwy) and jj < min(m + i, nn):
     #and my_win<min(m + i, nn):
         # diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
         # diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
         # diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
         # diffct = base_hits[3, tx] - surrounding_hits[3, ty]
-        diffx  = base_hits[0, tx] - x[jj]
-        diffy  = base_hits[1, tx] - y[jj]
-        diffz  = base_hits[2, tx] - z[jj]
-        diffct = base_hits[3, tx] - ct[jj]
+        diffx  = base_hits[0, tx] - x[i + jj]
+        diffy  = base_hits[1, tx] - y[i + jj]
+        diffz  = base_hits[2, tx] - z[i + jj]
+        diffct = base_hits[3, tx] - ct[i + jj]
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
-            correlations[i, jj - i] = 1
+            correlations[i, jj] = 1
+
+
+    if tx == 2 and ty == 1 and bx == 0 and by == 0:
+        from pdb import set_trace
+        set_trace()
 
     # if tx == 2 and ty == 2 and bx == 1 and by == 0:
     #    from pdb import set_trace
