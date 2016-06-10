@@ -1,24 +1,24 @@
 import numpy as np
-from numba import cuda, f4, void, boolean
+from numba import cuda, f4, void, i4, i1
 import time
 
 block_size = 1024
 block_size_x = int(np.sqrt(block_size))
 block_size_y = int(np.sqrt(block_size))
-shared_memory_size = block_size_x + block_size_y - 1
+surrounding_hits_size = block_size_x + block_size_y - 1
 
-@cuda.jit(void(boolean[:,:], f4[:], f4[:], f4[:], f4[:]))
-def quadratic_difference(correlations, x, y, z, ct):
+@cuda.jit(void(f4[:], f4[:], f4[:], f4[:], i4))
+def quadratic_difference(x, y, z, ct, m):
     tx = cuda.threadIdx.x
     ty = cuda.threadIdx.y
     
     i, j = cuda.grid(2)
 
-    n, m = correlations.shape
-
-    # l = i + j - int(m/2)
+    n = x.size
  
     l = i + j
+
+    correlations = cuda.shared.array((block_size_x, block_size_y), dtype = i1)
 
     # Suppose the thread block size = 1024 and we have square blocks, i.e. cuda.blockDim.x = cuda.blockDim.y,
     # than we have to copy 64 values to shared memory.
@@ -31,7 +31,7 @@ def quadratic_difference(correlations, x, y, z, ct):
         base_hits[2, tx] = z[i]
         base_hits[3, tx] = ct[i]
 
-    surrounding_hits = cuda.shared.array((4, shared_memory_size), dtype=f4)
+    surrounding_hits = cuda.shared.array((4, surrounding_hits_size), dtype=f4)
 
     if tx == 0 and l < n:
         surrounding_hits[0, ty] = x[l]
@@ -54,7 +54,9 @@ def quadratic_difference(correlations, x, y, z, ct):
         diffct = base_hits[3, tx] - surrounding_hits[3, tx + ty]
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
-            correlations[i, j] = 1
+            correlations[tx, ty] = 1
+        else:
+            correlations[tx, ty] = 0
 
 def main():
     start_computations = cuda.event(timing = True)
@@ -101,14 +103,14 @@ def main():
     print()
     print("Number of bytes needed for the correlation matrix = {0:.3e} ".format(correlations.nbytes))
 
-    correlations_gpu = cuda.to_device(correlations)
+    # correlations_gpu = cuda.to_device(correlations)
 
     gridx = int(np.ceil(correlations.shape[0]/block_size_x))
     gridy = int(np.ceil(correlations.shape[1]/block_size_y))
 
     start_computations.record()
 
-    quadratic_difference[(gridx, gridy), (block_size_x, block_size_y)](correlations_gpu, x_gpu, y_gpu, z_gpu, ct_gpu)
+    quadratic_difference[(gridx, gridy), (block_size_x, block_size_y)](x_gpu, y_gpu, z_gpu, ct_gpu, N_light_crossing)
 
     end_computations.record()
 
@@ -119,7 +121,7 @@ def main():
 
     start_transfer = time.time()
 
-    correlations_gpu.copy_to_host(correlations)
+    # correlations_gpu.copy_to_host(correlations)
 
     end_transfer = time.time()
 
