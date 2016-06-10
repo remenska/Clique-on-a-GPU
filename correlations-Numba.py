@@ -5,6 +5,7 @@ import time
 block_size = 1024
 block_size_x = int(np.sqrt(block_size))
 block_size_y = int(np.sqrt(block_size))
+shared_memory_size = block_size_x + block_size_y - 1
 
 @cuda.jit(void(boolean[:,:], f4[:], f4[:], f4[:], f4[:]))
 def quadratic_difference(correlations, x, y, z, ct):
@@ -30,21 +31,27 @@ def quadratic_difference(correlations, x, y, z, ct):
         base_hits[2, tx] = z[i]
         base_hits[3, tx] = ct[i]
 
-    surrounding_hits = cuda.shared.array((4, block_size_y), dtype=f4)
+    surrounding_hits = cuda.shared.array((4, shared_memory_size), dtype=f4)
 
-    if tx == 0 and l >= 0 and l < n:
+    if tx == 0 and l < n:
         surrounding_hits[0, ty] = x[l]
         surrounding_hits[1, ty] = y[l]
         surrounding_hits[2, ty] = z[l]
         surrounding_hits[3, ty] = ct[l]
 
+    if tx == block_size_x - 1 and l < n:
+        surrounding_hits[0, tx + ty] = x[l]
+        surrounding_hits[1, tx + ty] = y[l]
+        surrounding_hits[2, tx + ty] = z[l]
+        surrounding_hits[3, tx + ty] = ct[l]
+
     cuda.syncthreads()
 
     if i < n and j < m and l >= 0 and l < n:
-        diffx  = base_hits[0, tx] - surrounding_hits[0, ty]
-        diffy  = base_hits[1, tx] - surrounding_hits[1, ty]
-        diffz  = base_hits[2, tx] - surrounding_hits[2, ty]
-        diffct = base_hits[3, tx] - surrounding_hits[3, ty]
+        diffx  = base_hits[0, tx] - surrounding_hits[0, tx + ty]
+        diffy  = base_hits[1, tx] - surrounding_hits[1, tx + ty]
+        diffz  = base_hits[2, tx] - surrounding_hits[2, tx + ty]
+        diffct = base_hits[3, tx] - surrounding_hits[3, tx + ty]
 
         if diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz:
             correlations[i, j] = 1
@@ -53,7 +60,7 @@ def main():
     start_computations = cuda.event(timing = True)
     end_computations   = cuda.event(timing = True)
 
-    N = 5000
+    N = 500
 
     x = np.random.random(N).astype(np.float32)
     y = np.random.random(N).astype(np.float32)
@@ -73,7 +80,7 @@ def main():
     print('Data transfer from host to device plus memory allocation on device took {0:.2e}s.'.format(end_transfer - start_transfer))
 
     # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
-    N_light_crossing = 1500
+    N_light_crossing = 150
 
     # This used to be 2 * N_light_crossing, but caused redundant calculations.
     sliding_window_width =  N_light_crossing
