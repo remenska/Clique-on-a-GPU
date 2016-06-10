@@ -60,12 +60,23 @@ def main():
     start_computations = cuda.event(timing = True)
     end_computations   = cuda.event(timing = True)
 
-    N = 500
+    N = 30000
 
-    x = np.random.random(N).astype(np.float32)
-    y = np.random.random(N).astype(np.float32)
-    z = np.random.random(N).astype(np.float32)
-    ct = np.random.random(N).astype(np.float32)
+    x = np.load("x.npy")
+    y = np.load("y.npy")
+    z = np.load("z.npy")
+    ct = np.load("ct.npy")
+    
+    if x.size != N:
+        x = np.random.random(N).astype(np.float32)
+        y = np.random.random(N).astype(np.float32)
+        z = np.random.random(N).astype(np.float32)
+        ct = np.random.random(N).astype(np.float32)
+
+        np.save("x.npy", x)
+        np.save("y.npy", y)
+        np.save("z.npy", z)
+        np.save("ct.npy", ct)
 
     start_transfer = time.time()
 
@@ -80,7 +91,7 @@ def main():
     print('Data transfer from host to device plus memory allocation on device took {0:.2e}s.'.format(end_transfer - start_transfer))
 
     # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
-    N_light_crossing = 150
+    N_light_crossing = 3000
 
     # This used to be 2 * N_light_crossing, but caused redundant calculations.
     sliding_window_width =  N_light_crossing
@@ -117,15 +128,20 @@ def main():
 
     print()
     print('correlations = ', correlations)
+
+    check = np.load("check.npy")
+     
+    if N != check.shape[0]:   
+    	check = np.zeros_like(correlations)
    
-    check = np.zeros_like(correlations)
-   
-    # Checkif output is correct.
-    for i in range(check.shape[0]):
-        for j in range(i, i + check.shape[1]):
-            if j < check.shape[0]:
-                if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
-                    check[i, j - i] = 1
+    	# Checkif output is correct.
+    	for i in range(check.shape[0]):
+       	    for j in range(i, i + check.shape[1]):
+            	if j < check.shape[0]:
+                    if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
+                    	check[i, j - i] = 1
+
+    	np.save("check.npy", check)
 
     print()
     print()
