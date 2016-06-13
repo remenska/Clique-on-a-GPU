@@ -2,29 +2,27 @@ import pycuda.autoinit
 import pycuda.driver as drv
 import numpy as np
 import time
+from numba import jit
 
 from pycuda.compiler import SourceModule
 
 
 mod = SourceModule("""
-__global__ void quadratic_difference(bool *correlations, int N, int N_lightcrossing, int sliding_window_width, float *x, float *y, float *z, float *ct)
+__global__ void quadratic_difference(bool *correlations, int N, int sliding_window_width, float *x, float *y, float *z, float *ct)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    //  We want j to iterate over values near i, from i - N_light_crossing to i + N_light_crossing.
-    //  blockIdx.y * blockDim.y + threadIdx.y should take values from 0 to and possibly including 2 * N_lightcrossing.
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    int l = i + j - N_lightcrossing;
+    int l = i + j;
 
-    if (i >= N || j >= sliding_window_width || l < 0 || l >= N) return;
+    if (i >= N || j >= sliding_window_width) return;
 
     int pos = i * sliding_window_width + j;
 
-    // if (j==i){
-    //  correlations[pos1] = 1;
-    //  // correlations[pos2] = 1;
-    //  return;
-    // }
+    if (l >= N){
+      correlations[pos] = 0;
+      return;
+    }
 
     float diffct = ct[i] - ct[l];
     float diffx  = x[i] - x[l];
@@ -34,9 +32,6 @@ __global__ void quadratic_difference(bool *correlations, int N, int N_lightcross
     if (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz){ 
       correlations[pos] = 1;
     }
-    else{
-      correlations[pos] = 0;
-    }
 
 }
 """)
@@ -45,10 +40,21 @@ quadratic_difference= mod.get_function("quadratic_difference")
 
 N = 30000
 
-x = np.random.random(N).astype(np.float32)
-y = np.random.random(N).astype(np.float32)
-z = np.random.random(N).astype(np.float32)
-ct = np.random.random(N).astype(np.float32)
+x = np.load("x.npy")
+y = np.load("y.npy")
+z = np.load("z.npy")
+ct = np.load("ct.npy")
+
+if x.size != N:
+    x = np.random.random(N).astype(np.float32)
+    y = np.random.random(N).astype(np.float32)
+    z = np.random.random(N).astype(np.float32)
+    ct = np.random.random(N).astype(np.float32)
+
+    np.save("x.npy", x)
+    np.save("y.npy", y)
+    np.save("z.npy", z)
+    np.save("ct.npy", ct)
 
 start_malloc = time.time()
 
@@ -75,9 +81,9 @@ print()
 print('Data transfer from host to device took {0:.2e}s.'.format(end_transfer -start_transfer))
 
 # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
-N_light_crossing = 1500
-# We have a sliding window with size 2 * N_light_crossing to consider for correlations.
-sliding_window_width = 2 * N_light_crossing
+N_light_crossing     = 1500
+# This used to be 2 * N_light_crossing, but caused redundant calculations.
+sliding_window_width = N_light_crossing
 # problem_size = N * sliding_window_width
 
 correlations = np.zeros((N, sliding_window_width), 'b')
@@ -101,7 +107,7 @@ pycuda.autoinit.context.synchronize()
 start.record() # start timing
 
 quadratic_difference(
-        correlations_gpu, np.int32(correlations.shape[0]), np.int32(correlations.shape[1]/2), np.int32(correlations.shape[1]), x_gpu, y_gpu, z_gpu, ct_gpu, 
+        correlations_gpu, np.int32(correlations.shape[0]), np.int32(correlations.shape[1]), x_gpu, y_gpu, z_gpu, ct_gpu, 
         block=(block_size_x, block_size_y, 1), grid=(gridx, gridy))
 
 pycuda.autoinit.context.synchronize()
@@ -126,14 +132,31 @@ print('Data transfer from device to host took {0:.2e}s.'.format(end_transfer -st
 print()
 print('correlations = ', correlations)
 
-check = np.zeros_like(correlations)
+check = np.load("check.npy")
 
-# Checkif output is correct.
-for i in range(check.shape[0]):
-    for j in range(i - int(check.shape[1]/2), i + int(check.shape[1]/2)):
-        if (j < check.shape[0]) and (j >= 0):
-            if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
-                check[i, j - i +  int(check.shape[1]/2)] = 1
+# Speed up the CPU processing.
+@jit
+def correlations_cpu(check, x, y, z, ct):
+    for i in range(check.shape[0]):
+        for j in range(i, i + check.shape[1]):
+            if j < check.shape[0]:
+                if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
+                   check[i, j - i] = 1
+    return check
+ 
+if N != check.shape[0]:
+    start_cpu_computations = time.time()   
+    
+    check = np.zeros_like(correlations)
+    # Checkif output is correct.
+    check = correlations_cpu(check, x, y, z, ct)
+
+    end_cpu_computations = time.time()   
+    
+    print()
+    print('Time taken for cpu computations is {0:.2e}s.= '.format(end_cpu_computations - start_cpu_computations)) 
+
+    np.save("check.npy", check)
 
 print()
 print()
@@ -141,6 +164,13 @@ print('check = ', check)
 print()
 print('check.max() = {0}'.format(check.max()))
 print()
-print('This should be close to zero: {0}'.format(np.sum(np.abs(check - correlations))))
+
+sum_abs = np.sum(np.abs(check - correlations)) 
+print('This should be close to zero: {0}'.format(sum_abs))
 print()
-print('check - correlations = ', check -correlations)
+
+if sum_abs > 0: 
+    print('Index or indices where the difference is nonzero: ', (check-correlations).nonzero())
+    print()
+    print('check - correlations = ', check - correlations)
+
