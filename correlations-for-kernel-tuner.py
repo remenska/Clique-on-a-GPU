@@ -33,12 +33,11 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 }
 """
 
-N = 30000
+N                    =    30000
+N_light_crossing     =    1500
+sliding_window_width =    N_light_crossing
 
-N_light_crossing     = 1500
-sliding_window_width = N_light_crossing
-
-problem_size = (N * sliding_window_width, 1)
+problem_size = (N, sliding_window_width)
 
 
 x = np.random.random(N).astype(np.float32)
@@ -48,10 +47,15 @@ ct = np.random.random(N).astype(np.float32)
 
 correlations = np.zeros((N, sliding_window_width), 'b')
 
-args = [correlations, N, sliding_window_width, x, y, z, ct]
+args = [correlations, np.int32(N), np.int32(sliding_window_width), x, y, z, ct]
 
 tune_params = dict()
-tune_params["block_size_x"] = [128+64*i for i in range(15)]
-tune_params["block_size_y"] = [128+64*i for i in range(15)]
+tune_params["block_size_x"] = [2**i for i in range(11)]
+tune_params["block_size_y"] = [2**i for i in range(11)]
 
-tune_kernel("quadratic_difference", kernel_string, problem_size, args, tune_params) 
+grid_div_x = ["block_size_x"]
+grid_div_y = ["block_size_y"]
+
+restrict = ["block_size_x * block_size_y <= 1024"]
+
+tune_kernel("quadratic_difference", kernel_string, problem_size, args, tune_params, grid_div_x=grid_div_x, grid_div_y=grid_div_y, restrictions=restrict, verbose = True) 
