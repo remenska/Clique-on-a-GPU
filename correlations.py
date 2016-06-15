@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import pycuda.autoinit
 import pycuda.driver as drv
 import numpy as np
@@ -40,12 +42,15 @@ quadratic_difference= mod.get_function("quadratic_difference")
 
 N = 30000
 
-x = np.load("x.npy")
-y = np.load("y.npy")
-z = np.load("z.npy")
-ct = np.load("ct.npy")
+try:
+    x = np.load("x.npy")
+    y = np.load("y.npy")
+    z = np.load("z.npy")
+    ct = np.load("ct.npy")
 
-if x.size != N:
+    assert x.size == N
+
+except (FileNotFoundError, AssertionError):
     x = np.random.random(N).astype(np.float32)
     y = np.random.random(N).astype(np.float32)
     z = np.random.random(N).astype(np.float32)
@@ -57,6 +62,7 @@ if x.size != N:
     np.save("ct.npy", ct)
 
 start_malloc = time.time()
+
 
 x_gpu = drv.mem_alloc(x.nbytes)
 y_gpu = drv.mem_alloc(y.nbytes)
@@ -91,9 +97,12 @@ print()
 print("Number of bytes needed for the correlation matrix = {0:.3e} ".format(correlations.nbytes))
 correlations_gpu = drv.mem_alloc(correlations.nbytes)
 
-block_size = 1024
-block_size_x = int(np.sqrt(block_size))
-block_size_y = int(np.sqrt(block_size))
+# block_size_x = int(np.sqrt(block_size))
+block_size_x = 32
+# block_size_y = int(np.sqrt(block_size))
+block_size_y = 32
+
+block_size = block_size_x * block_size_y
 
 gridx = int(np.ceil(correlations.shape[0]/block_size_x))
 gridy = int(np.ceil(correlations.shape[1]/block_size_y))
@@ -118,7 +127,7 @@ end.synchronize()
 secs = start.time_till(end)*1e-3
 
 print()
-print('Time taken for computations is {0:.2e}s.'.format(secs))
+print('Time taken for GPU computations is {0:.2e}s.'.format(secs))
 
 start_transfer = time.time()
 
@@ -132,8 +141,6 @@ print('Data transfer from device to host took {0:.2e}s.'.format(end_transfer -st
 print()
 print('correlations = ', correlations)
 
-check = np.load("check.npy")
-
 # Speed up the CPU processing.
 @jit
 def correlations_cpu(check, x, y, z, ct):
@@ -143,20 +150,25 @@ def correlations_cpu(check, x, y, z, ct):
                 if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
                    check[i, j - i] = 1
     return check
- 
-if N != check.shape[0]:
-    start_cpu_computations = time.time()   
-    
-    check = np.zeros_like(correlations)
-    # Checkif output is correct.
-    check = correlations_cpu(check, x, y, z, ct)
 
-    end_cpu_computations = time.time()   
-    
-    print()
-    print('Time taken for cpu computations is {0:.2e}s.= '.format(end_cpu_computations - start_cpu_computations)) 
+try:
+    check = np.load("check.npy")
 
-    np.save("check.npy", check)
+    assert N == check.shape[0] and sliding_window_width == check.shape[1]
+
+except (FileNotFoundError, AssertionError):
+        start_cpu_computations = time.time()   
+        
+        check = np.zeros_like(correlations)
+        # Checkif output is correct.
+        check = correlations_cpu(check, x, y, z, ct)
+
+        end_cpu_computations = time.time()   
+        
+        print()
+        print('Time taken for cpu computations is {0:.2e}s.'.format(end_cpu_computations - start_cpu_computations)) 
+
+        np.save("check.npy", check)
 
 print()
 print()
