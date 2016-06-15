@@ -2,9 +2,12 @@ import numpy as np
 from numba import cuda, f4, void, boolean, jit
 import time
 
-block_size = 1024
-block_size_x = int(np.sqrt(block_size))
-block_size_y = int(np.sqrt(block_size))
+# block_size = 1024
+# block_size_x = int(np.sqrt(block_size))
+# block_size_y = int(np.sqrt(block_size))
+block_size_x = 2
+block_size_y = 32
+
 surrounding_hits_length = block_size_x + block_size_y - 1
 
 @cuda.jit(void(boolean[:,:], f4[:], f4[:], f4[:], f4[:]))
@@ -62,12 +65,15 @@ def main():
 
     N = 30000
 
-    x = np.load("x.npy")
-    y = np.load("y.npy")
-    z = np.load("z.npy")
-    ct = np.load("ct.npy")
-    
-    if x.size != N:
+    try:
+        x = np.load("x.npy")
+        y = np.load("y.npy")
+        z = np.load("z.npy")
+        ct = np.load("ct.npy")
+
+        assert x.size == N
+
+    except (FileNotFoundError, AssertionError):
         x = np.random.random(N).astype(np.float32)
         y = np.random.random(N).astype(np.float32)
         z = np.random.random(N).astype(np.float32)
@@ -128,8 +134,6 @@ def main():
 
     print()
     print('correlations = ', correlations)
-
-    check = np.load("check.npy")
  
     # Speed up the CPU processing.
     @jit
@@ -140,20 +144,25 @@ def main():
                     if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
                         check[i, j - i] = 1
         return check
-     
-    if N != check.shape[0]:
-        start_cpu_computations = time.time()   
-        
-        check = np.zeros_like(correlations)
-        # Checkif output is correct.
-        check = correlations_cpu(check, x, y, z, ct)
+    
+    try:
+        check = np.load("check.npy")
 
-        end_cpu_computations = time.time()   
-        
-        print()
-        print('Time taken for cpu computations is {0:.2e}s.= '.format(end_cpu_computations - start_cpu_computations)) 
+        assert N == check.shape[0] and sliding_window_width == check.shape[1]
 
-        np.save("check.npy", check)
+    except (FileNotFoundError, AssertionError):
+            start_cpu_computations = time.time()   
+            
+            check = np.zeros_like(correlations)
+            # Checkif output is correct.
+            check = correlations_cpu(check, x, y, z, ct)
+
+            end_cpu_computations = time.time()   
+            
+            print()
+            print('Time taken for cpu computations is {0:.2e}s.'.format(end_cpu_computations - start_cpu_computations)) 
+
+            np.save("check.npy", check) 
 
     print()
     print()
