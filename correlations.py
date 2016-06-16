@@ -15,7 +15,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    int l = i + j;
+    int l = i + j + 1;
 
     if (i >= N || j >= sliding_window_width) return;
 
@@ -33,6 +33,9 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
     if (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz){ 
       correlations[pos] = 1;
+    }
+    else{
+      correlations[pos] = 0;
     }
 
 }
@@ -87,7 +90,7 @@ print()
 print('Data transfer from host to device took {0:.2e}s.'.format(end_transfer -start_transfer))
 
 # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
-N_light_crossing     = 1500
+N_light_crossing     = 3000
 # This used to be 2 * N_light_crossing, but caused redundant calculations.
 sliding_window_width = N_light_crossing
 # problem_size = N * sliding_window_width
@@ -102,7 +105,7 @@ block_size_x = 32
 # block_size_y = int(np.sqrt(block_size))
 block_size_y = 32
 
-block_size = block_size_x * block_size_y
+# block_size = block_size_x * block_size_y
 
 gridx = int(np.ceil(correlations.shape[0]/block_size_x))
 gridy = int(np.ceil(correlations.shape[1]/block_size_y))
@@ -145,10 +148,10 @@ print('correlations = ', correlations)
 @jit
 def correlations_cpu(check, x, y, z, ct):
     for i in range(check.shape[0]):
-        for j in range(i, i + check.shape[1]):
+        for j in range(i + 1, i + check.shape[1] + 1):
             if j < check.shape[0]:
                 if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
-                   check[i, j - i] = 1
+                   check[i, j - i - 1] = 1
     return check
 
 try:
