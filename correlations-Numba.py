@@ -21,7 +21,7 @@ def quadratic_difference(correlations, x, y, z, ct):
 
     # l = i + j - int(m/2)
  
-    l = i + j
+    l = i + j + 1
 
     # Suppose the thread block size = 1024 and we have square blocks, i.e. cuda.blockDim.x = cuda.blockDim.y,
     # than we have to copy 64 values to shared memory.
@@ -139,10 +139,10 @@ def main():
     @jit
     def correlations_cpu(check, x, y, z, ct):
         for i in range(check.shape[0]):
-            for j in range(i, i + check.shape[1]):
+            for j in range(i + 1, i + check.shape[1] + 1):
                 if j < check.shape[0]:
                     if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
-                        check[i, j - i] = 1
+                        check[i, j - i - 1] = 1
         return check
     
     try:
