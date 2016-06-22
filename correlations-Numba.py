@@ -5,8 +5,8 @@ import time
 # block_size = 1024
 # block_size_x = int(np.sqrt(block_size))
 # block_size_y = int(np.sqrt(block_size))
-block_size_x = 2
-block_size_y = 32
+block_size_x = 8
+block_size_y = 16
 
 surrounding_hits_length = block_size_x + block_size_y - 1
 
