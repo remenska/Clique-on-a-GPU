@@ -90,7 +90,7 @@ print()
 print('Data transfer from host to device took {0:.2e}s.'.format(end_transfer -start_transfer))
 
 # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
-N_light_crossing     = 3000
+N_light_crossing     = 1500
 # This used to be 2 * N_light_crossing, but caused redundant calculations.
 sliding_window_width = N_light_crossing
 # problem_size = N * sliding_window_width
@@ -101,7 +101,7 @@ print("Number of bytes needed for the correlation matrix = {0:.3e} ".format(corr
 correlations_gpu = drv.mem_alloc(correlations.nbytes)
 
 # block_size_x = int(np.sqrt(block_size))
-block_size_x = 32
+block_size_x = 2
 # block_size_y = int(np.sqrt(block_size))
 block_size_y = 32
 
