@@ -10,6 +10,14 @@ from pycuda.compiler import SourceModule
 import pycuda.driver
 
 mod = SourceModule("""
+#ifndef block_size_x
+    #define block_size_x 2
+#endif
+
+#ifndef block_size_y
+    #define block_size_y 32
+#endif
+
 __global__ void quadratic_difference(bool *correlations, int N, int sliding_window_width, float *x, float *y, float *z, float *ct)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -17,7 +25,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
     int l = i + j + 1;
 
-    __shared__ float base_hits[4][blockDim.x];
+    __shared__ float base_hits[4][block_size_x];
 
     if (i >= N || j >= sliding_window_width) return;
 
