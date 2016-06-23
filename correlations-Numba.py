@@ -77,8 +77,8 @@ def main():
     x = np.random.normal(0.2, 0.1, N).astype(np.float32)
     y = np.random.normal(0.2, 0.1, N).astype(np.float32)
     z = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    ct = 1000*np.linspace(0, 0.1, N).astype(np.float32)
-    #ct = 1000*np.random.random(N).astype(np.float32)
+    #ct = 1000*np.linspace(0, 0.1, N).astype(np.float32)
+    ct = 1000*np.random.normal(0.2, 0.1, N).astype(np.float32)
 
     np.save("x.npy", x)
     np.save("y.npy", y)
