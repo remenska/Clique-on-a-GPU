@@ -189,3 +189,5 @@ if sum_abs > 0:
     print()
     print('check - correlations = ', check - correlations)
 
+pycuda.driver.stop_profiler()
+
