@@ -65,24 +65,24 @@ def main():
 
     N = 81
 
-    try:
-        x = np.load("x.npy")
-        y = np.load("y.npy")
-        z = np.load("z.npy")
-        ct = np.load("ct.npy")
+    # try:
+    #     x = np.load("x.npy")
+    #     y = np.load("y.npy")
+    #     z = np.load("z.npy")
+    #     ct = np.load("ct.npy")
 
-        assert x.size == N
+    #     assert x.size == N
 
-    except (FileNotFoundError, AssertionError):
-        x = np.random.random(N).astype(np.float32)
-        y = np.random.random(N).astype(np.float32)
-        z = np.random.random(N).astype(np.float32)
-        ct = np.linspace(0, 0.1, N)
+    # except (FileNotFoundError, AssertionError):
+    x = np.random.random(N).astype(np.float32)
+    y = np.random.random(N).astype(np.float32)
+    z = np.random.random(N).astype(np.float32)
+    ct = np.linspace(0, 0.1, N)
 
-        np.save("x.npy", x)
-        np.save("y.npy", y)
-        np.save("z.npy", z)
-        np.save("ct.npy", ct)
+    np.save("x.npy", x)
+    np.save("y.npy", y)
+    np.save("z.npy", z)
+    np.save("ct.npy", ct)
 
     start_transfer = time.time()
 
