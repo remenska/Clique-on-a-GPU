@@ -1,0 +1,2 @@
+==2642== NVPROF is profiling process 2642, command: /home/danielar/miniconda3/bin/python /home/danielar/Clique-on-a-GPU/correlations-Numba.py
+==2642== Generated result file: /home/danielar/nvvp_workspace/.metadata/.plugins/com.nvidia.viper/launch/3/api_2642.log
