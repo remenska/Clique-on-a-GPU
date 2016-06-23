@@ -42,17 +42,21 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
       base_hits[3][threadIdx.x] = ct[i];
     }
 
-    float diffx  = base_hits[0][threadIdx.x] - x[l];
-    float diffy  = base_hits[1][threadIdx.x] - y[l];
-    float diffz  = base_hits[2][threadIdx.x] - z[l];
-    float diffct = base_hits[3][threadIdx.x] - ct[l];
+    if (i < N && j < sliding_window_width && l < N){
+      float diffx  = base_hits[0][threadIdx.x] - x[l];
+      float diffy  = base_hits[1][threadIdx.x] - y[l];
+      float diffz  = base_hits[2][threadIdx.x] - z[l];
+      float diffct = base_hits[3][threadIdx.x] - ct[l];
 
-    if (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz){ 
-      correlations[pos] = 1;
+      if (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz){ 
+        correlations[pos] = 1;
+      }
+      else{
+        correlations[pos] = 0;
+      }
     }
-    else{
-      correlations[pos] = 0;
-    }
+
+
 
 }
 """)
