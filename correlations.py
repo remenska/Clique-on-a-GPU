@@ -35,7 +35,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
       return;
     }
 
-    if (threadIdx.x == 0 && i < N){
+    if (threadIdx.y == 0 && i < N){
       base_hits[0][threadIdx.x] = x[i];
       base_hits[1][threadIdx.x] = y[i];
       base_hits[2][threadIdx.x] = z[i];
