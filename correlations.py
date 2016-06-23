@@ -17,6 +17,8 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
     int l = i + j + 1;
 
+     __shared__ float base_hits[4][block_size_x];
+
     if (i >= N || j >= sliding_window_width) return;
 
     int pos = i * sliding_window_width + j;
