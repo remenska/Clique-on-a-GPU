@@ -17,7 +17,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
     int l = i + j + 1;
 
-     __shared__ float base_hits[4][block_size_x];
+    __shared__ float base_hits[4][blockDim.x];
 
     if (i >= N || j >= sliding_window_width) return;
 
@@ -47,24 +47,24 @@ quadratic_difference= mod.get_function("quadratic_difference")
 
 N = 30000
 
-# try:
-#     x = np.load("x.npy")
-#     y = np.load("y.npy")
-#     z = np.load("z.npy")
-#     ct = np.load("ct.npy")
+try:
+    x = np.load("x.npy")
+    y = np.load("y.npy")
+    z = np.load("z.npy")
+    ct = np.load("ct.npy")
 
-#     assert x.size == N
+    assert x.size == N
 
-# except (FileNotFoundError, AssertionError):
-x = np.random.normal(0.2, 0.1, N).astype(np.float32)
-y = np.random.normal(0.2, 0.1, N).astype(np.float32)
-z = np.random.normal(0.2, 0.1, N).astype(np.float32)
-ct = 1000*np.random.normal(0.5, 0.06, N).astype(np.float32)
+except (FileNotFoundError, AssertionError):
+    x = np.random.random(N).astype(np.float32)
+    y = np.random.random(N).astype(np.float32)
+    z = np.random.random(N).astype(np.float32)
+    ct = np.random.random(N).astype(np.float32)
 
-np.save("x.npy", x)
-np.save("y.npy", y)
-np.save("z.npy", z)
-np.save("ct.npy", ct)
+    np.save("x.npy", x)
+    np.save("y.npy", y)
+    np.save("z.npy", z)
+    np.save("ct.npy", ct)
 
 start_malloc = time.time()
 
@@ -147,7 +147,7 @@ print('Data transfer from device to host took {0:.2e}s.'.format(end_transfer -st
 
 print()
 print('correlations = ', correlations)
-np.save("correlations.npy", correlations)
+
 # Speed up the CPU processing.
 @jit
 def correlations_cpu(check, x, y, z, ct):
@@ -158,23 +158,24 @@ def correlations_cpu(check, x, y, z, ct):
                    check[i, j - i - 1] = 1
     return check
 
-# try:
-#     check = np.load("check.npy")
+try:
+    check = np.load("check.npy")
 
-    # assert N == check.shape[0] and sliding_window_width == check.shape[1]
+    assert N == check.shape[0] and sliding_window_width == check.shape[1]
 
-# except (FileNotFoundError, AssertionError):
-start_cpu_computations = time.time()   
+except (FileNotFoundError, AssertionError):
+        start_cpu_computations = time.time()   
+        
+        check = np.zeros_like(correlations)
+        # Checkif output is correct.
+        check = correlations_cpu(check, x, y, z, ct)
 
-check = np.zeros_like(correlations)
-# Checkif output is correct.
-check = correlations_cpu(check, x, y, z, ct)
+        end_cpu_computations = time.time()   
+        
+        print()
+        print('Time taken for cpu computations is {0:.2e}s.'.format(end_cpu_computations - start_cpu_computations)) 
 
-end_cpu_computations = time.time()   
-print()
-print('Time taken for cpu computations is {0:.2e}s.'.format(end_cpu_computations - start_cpu_computations)) 
-
-np.save("check.npy", check)
+        np.save("check.npy", check)
 
 print()
 print()
@@ -191,4 +192,4 @@ if sum_abs > 0:
     print('Index or indices where the difference is nonzero: ', (check-correlations).nonzero())
     print()
     print('check - correlations = ', check - correlations)
-print("Percentage hits = {0} %".format(100 * np.sum(correlations / (correlations.shape[0] * correlations.shape[1]))))
+
