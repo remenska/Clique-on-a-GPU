@@ -7,7 +7,7 @@ import time
 from numba import jit
 
 from pycuda.compiler import SourceModule
-
+import pycuda.driver
 
 mod = SourceModule("""
 __global__ void quadratic_difference(bool *correlations, int N, int sliding_window_width, float *x, float *y, float *z, float *ct)
@@ -117,7 +117,7 @@ end = drv.Event()
 pycuda.autoinit.context.synchronize()
 
 start.record() # start timing
-
+pycuda.driver.start_profiler()
 quadratic_difference(
         correlations_gpu, np.int32(correlations.shape[0]), np.int32(correlations.shape[1]), x_gpu, y_gpu, z_gpu, ct_gpu, 
         block=(block_size_x, block_size_y, 1), grid=(gridx, gridy))
@@ -127,6 +127,8 @@ pycuda.autoinit.context.synchronize()
 end.record() # end timing
 # calculate the run length
 end.synchronize()
+pycuda.driver.stop_profiler()
+
 secs = start.time_till(end)*1e-3
 
 print()
@@ -188,6 +190,4 @@ if sum_abs > 0:
     print('Index or indices where the difference is nonzero: ', (check-correlations).nonzero())
     print()
     print('check - correlations = ', check - correlations)
-
-pycuda.driver.stop_profiler()
 
