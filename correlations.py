@@ -42,6 +42,22 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
       base_hits[3][threadIdx.x] = ct[i];
     }
 
+    __shared__ float surrounding_hits[4][block_size_x + block_size_y - 1];
+
+    if (threadIdx.x == 0 && l < N){
+      surrounding_hits[0][threadIdx.y] = x[l];
+      surrounding_hits[1][threadIdx.y] = y[l];
+      surrounding_hits[2][threadIdx.y] = z[l];
+      surrounding_hits[3][threadIdx.y] = ct[l];
+    }
+
+    if (threadIdx.x == block_size_x - 1 && l < N){
+      surrounding_hits[0][threadIdx.x + threadIdx.y] = x[l];
+      surrounding_hits[1][threadIdx.x + threadIdx.y] = y[l];
+      surrounding_hits[2][threadIdx.x + threadIdx.y] = z[l];
+      surrounding_hits[3][threadIdx.x + threadIdx.y] = ct[l];
+    }
+
     __syncthreads();
 
     if (i < N && j < sliding_window_width && l < N){
