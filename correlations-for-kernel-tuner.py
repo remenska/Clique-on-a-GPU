@@ -5,12 +5,19 @@ import numpy as np
 from kernel_tuner import tune_kernel
 
 kernel_string = """
+#if !defined(block_size_x)
+    #define block_size_x 16
+    #define block_size_y 16
+#endif
+
 __global__ void quadratic_difference(bool *correlations, int N, int sliding_window_width, float *x, float *y, float *z, float *ct)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    int l = i + j;
+    int l = i + j + 1;
+
+    __shared__ float base_hits[4][block_size_x];
 
     if (i >= N || j >= sliding_window_width) return;
 
@@ -21,14 +28,46 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
       return;
     }
 
-    float diffct = ct[i] - ct[l];
-    float diffx  = x[i] - x[l];
-    float diffy  = y[i] - y[l];
-    float diffz  = z[i] - z[l];
-
-    if (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz){ 
-      correlations[pos] = 1;
+    if (threadIdx.y == 0 && i < N){
+      base_hits[0][threadIdx.x] = x[i];
+      base_hits[1][threadIdx.x] = y[i];
+      base_hits[2][threadIdx.x] = z[i];
+      base_hits[3][threadIdx.x] = ct[i];
     }
+
+    __shared__ float surrounding_hits[4][block_size_x + block_size_y - 1];
+
+    if (threadIdx.x == 0 && l < N){
+      surrounding_hits[0][threadIdx.y] = x[l];
+      surrounding_hits[1][threadIdx.y] = y[l];
+      surrounding_hits[2][threadIdx.y] = z[l];
+      surrounding_hits[3][threadIdx.y] = ct[l];
+    }
+
+    if (threadIdx.x == block_size_x - 1 && l < N){
+      surrounding_hits[0][threadIdx.x + threadIdx.y] = x[l];
+      surrounding_hits[1][threadIdx.x + threadIdx.y] = y[l];
+      surrounding_hits[2][threadIdx.x + threadIdx.y] = z[l];
+      surrounding_hits[3][threadIdx.x + threadIdx.y] = ct[l];
+    }
+
+    __syncthreads();
+
+    if (i < N && j < sliding_window_width && l < N){
+      float diffx  = base_hits[0][threadIdx.x] - surrounding_hits[0][threadIdx.x + threadIdx.y];
+      float diffy  = base_hits[1][threadIdx.x] - surrounding_hits[1][threadIdx.x + threadIdx.y];
+      float diffz  = base_hits[2][threadIdx.x] - surrounding_hits[2][threadIdx.x + threadIdx.y];
+      float diffct = base_hits[3][threadIdx.x] - surrounding_hits[3][threadIdx.x + threadIdx.y];
+
+      if (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz){ 
+        correlations[pos] = 1;
+      }
+      else{
+        correlations[pos] = 0;
+      }
+    }
+
+
 
 }
 """
