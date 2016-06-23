@@ -189,4 +189,4 @@ if sum_abs > 0:
     print('Index or indices where the difference is nonzero: ', (check-correlations).nonzero())
     print()
     print('check - correlations = ', check - correlations)
-
+print("Percentage hits = {0} %".format(100 * np.sum(correlations / (correlations.shape[0] * correlations.shape[1]))))
