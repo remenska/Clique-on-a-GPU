@@ -1,0 +1,2 @@
+==1630== NVPROF is profiling process 1630, command: /home/danielar/miniconda3/bin/python /home/danielar/Clique-on-a-GPU/correlations-Numba.py
+==1630== Generated result file: /home/danielar/nvvp_workspace/.metadata/.plugins/com.nvidia.viper/launch/1/api_1630.log
