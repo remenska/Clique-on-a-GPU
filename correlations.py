@@ -42,6 +42,8 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
       base_hits[3][threadIdx.x] = ct[i];
     }
 
+    __syncthreads();
+
     if (i < N && j < sliding_window_width && l < N){
       float diffx  = base_hits[0][threadIdx.x] - x[l];
       float diffy  = base_hits[1][threadIdx.x] - y[l];
