@@ -81,7 +81,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
 quadratic_difference= mod.get_function("quadratic_difference")
 
-N = 1000000
+N = 1400000
 
 # try:
 #     x = np.load("x.npy")
@@ -97,14 +97,14 @@ y = np.random.normal(0.2, 0.1, N).astype(np.float32)
 z = np.random.normal(0.2, 0.1, N).astype(np.float32)
 ct = 1000*np.random.normal(0.5, 0.06, N).astype(np.float32)
 
-np.save("x.npy", x)
-np.save("y.npy", y)
-np.save("z.npy", z)
-np.save("ct.npy", ct)
+#np.save("x.npy", x)
+#np.save("y.npy", y)
+#np.save("z.npy", z)
+#np.save("ct.npy", ct)
 
 start_malloc = time.time()
 
-
+pycuda.driver.start_profiler()
 x_gpu = drv.mem_alloc(x.nbytes)
 y_gpu = drv.mem_alloc(y.nbytes)
 z_gpu = drv.mem_alloc(z.nbytes)
@@ -137,7 +137,7 @@ correlations = np.zeros((N, sliding_window_width), 'b')
 print()
 print("Number of bytes needed for the correlation matrix = {0:.3e} ".format(correlations.nbytes))
 correlations_gpu = drv.mem_alloc(correlations.nbytes)
-
+drv.memcpy_htod(correlations_gpu, correlations)
 # block_size_x = int(np.sqrt(block_size))
 block_size_x = 2
 # block_size_y = int(np.sqrt(block_size))
@@ -155,7 +155,6 @@ end = drv.Event()
 pycuda.autoinit.context.synchronize()
 
 start.record() # start timing
-pycuda.driver.start_profiler()
 quadratic_difference(
         correlations_gpu, np.int32(correlations.shape[0]), np.int32(correlations.shape[1]), x_gpu, y_gpu, z_gpu, ct_gpu, 
         block=(block_size_x, block_size_y, 1), grid=(gridx, gridy))
@@ -165,7 +164,6 @@ pycuda.autoinit.context.synchronize()
 end.record() # end timing
 # calculate the run length
 end.synchronize()
-pycuda.driver.stop_profiler()
 
 secs = start.time_till(end)*1e-3
 
@@ -176,6 +174,7 @@ start_transfer = time.time()
 
 drv.memcpy_dtoh(correlations, correlations_gpu)
 
+pycuda.driver.stop_profiler()
 end_transfer = time.time()
 
 print()
@@ -183,7 +182,7 @@ print('Data transfer from device to host took {0:.2e}s.'.format(end_transfer -st
 
 print()
 print('correlations = ', correlations)
-np.save("correlations.npy", correlations)
+#np.save("correlations.npy", correlations)
 # Speed up the CPU processing.
 @jit
 def correlations_cpu(check, x, y, z, ct):
@@ -210,7 +209,7 @@ end_cpu_computations = time.time()
 print()
 print('Time taken for cpu computations is {0:.2e}s.'.format(end_cpu_computations - start_cpu_computations)) 
 
-np.save("check.npy", check)
+#np.save("check.npy", check)
 
 print()
 print()
