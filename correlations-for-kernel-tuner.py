@@ -3,6 +3,7 @@
 
 import numpy as np
 from kernel_tuner import tune_kernel
+from collections import OrderedDict
 
 kernel_string = """
 #if !defined(block_size_x)
@@ -88,7 +89,7 @@ correlations = np.zeros((N, sliding_window_width), 'b')
 
 args = [correlations, np.int32(N), np.int32(sliding_window_width), x, y, z, ct]
 
-tune_params = dict()
+tune_params = OrderedDict()
 tune_params["block_size_x"] = [2**i for i in range(11)]
 tune_params["block_size_y"] = [2**i for i in range(11)]
 
