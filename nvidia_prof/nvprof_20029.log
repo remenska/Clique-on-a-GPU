@@ -1,0 +1,3 @@
+==20029== NVPROF is profiling process 20029, command: /home/danielar/miniconda3/bin/python /home/danielar/Clique-on-a-GPU/correlations-Numba.py
+==20029== Some kernel(s) will be replayed on device 0 in order to collect all events/metrics.
+==20029== Generated result file: /home/danielar/nvvp_workspace/.metadata/.plugins/com.nvidia.viper/launch/11/api_20029.log0
