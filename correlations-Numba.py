@@ -5,8 +5,8 @@ import time
 # block_size = 1024
 # block_size_x = int(np.sqrt(block_size))
 # block_size_y = int(np.sqrt(block_size))
-block_size_x = 3
-block_size_y = 3
+block_size_x = 8
+block_size_y = 16
 
 surrounding_hits_length = block_size_x + block_size_y - 1
 
@@ -63,7 +63,7 @@ def main():
     #start_computations = cuda.event(timing = True)
     #end_computations   = cuda.event(timing = True)
 
-    N = 30000
+    N = 4500000
 
     # try:
     #     x = np.load("x.npy")
@@ -80,18 +80,20 @@ def main():
     #ct = 1000*np.linspace(0, 0.1, N).astype(np.float32)
     ct = 1000*np.random.normal(0.5, 0.06, N).astype(np.float32)
 
-    np.save("x.npy", x)
-    np.save("y.npy", y)
-    np.save("z.npy", z)
-    np.save("ct.npy", ct)
+    #np.save("x.npy", x)
+    #np.save("y.npy", y)
+    #np.save("z.npy", z)
+    #np.save("ct.npy", ct)
 
     start_transfer = time.time()
 
+    cuda.profiling()
+    cuda.profile_start()
     x_gpu = cuda.to_device(x)
     y_gpu = cuda.to_device(y)
     z_gpu = cuda.to_device(z)
     ct_gpu = cuda.to_device(ct)
-
+    
     end_transfer = time.time()
 
     print()
@@ -127,6 +129,7 @@ def main():
     start_transfer = time.time()
 
     correlations_gpu.copy_to_host(correlations)
+    cuda.profile_stop()
 
     end_transfer = time.time()
 
@@ -135,7 +138,7 @@ def main():
 
     print()
     print('correlations = ', correlations)
-    np.save("correlations.npy", correlations)
+    #np.save("correlations.npy", correlations)
  
     # Speed up the CPU processing.
     @jit
@@ -164,7 +167,7 @@ def main():
     print()
     print('Time taken for cpu computations is {0:.2e}s.'.format(end_cpu_computations - start_cpu_computations)) 
 
-    np.save("check.npy", check) 
+    #np.save("check.npy", check) 
 
     print()
     print()
