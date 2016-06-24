@@ -26,15 +26,6 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
     __shared__ float base_hits[4][block_size_x];
 
-    if (threadIdx.y == 0 ){
-      base_hits[0][threadIdx.x] = 0;
-      base_hits[1][threadIdx.x] = 0;
-      base_hits[2][threadIdx.x] = 0;
-      base_hits[3][threadIdx.x] = 0;   
-    }
-
-    __syncthreads();
-
     if (i >= N || j >= sliding_window_width) return;
 
     int pos = i * sliding_window_width + j;
@@ -52,15 +43,6 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
     }
 
     __shared__ float surrounding_hits[4][block_size_x + block_size_y - 1];
-
-    if (threadIdx.y ==0){
-      surrounding_hits[0][threadIdx.y] = 0;
-      surrounding_hits[1][threadIdx.y] = 0;
-      surrounding_hits[2][threadIdx.y] = 0;
-      surrounding_hits[3][threadIdx.y] = 0;   
-    }
-
-    __syncthreads();
 
     if (threadIdx.x == 0 && l < N){
       surrounding_hits[0][threadIdx.y] = x[l];
@@ -99,7 +81,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
 quadratic_difference= mod.get_function("quadratic_difference")
 
-N = 30000
+N = 1000000
 
 # try:
 #     x = np.load("x.npy")
