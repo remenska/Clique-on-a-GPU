@@ -19,8 +19,8 @@ mod = SourceModule("""
 
 __global__ void quadratic_difference(bool *correlations, int N, int sliding_window_width, float *x, float *y, float *z, float *ct)
 {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned long j = blockIdx.y * blockDim.y + threadIdx.y;
 
     int l = i + j + 1;
 
@@ -28,7 +28,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
     if (i >= N || j >= sliding_window_width) return;
 
-    int pos = i * sliding_window_width + j;
+    const unsigned long pos = i * sliding_window_width + j;
 
     if (l >= N){
       correlations[pos] = 0;
@@ -81,7 +81,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
 quadratic_difference= mod.get_function("quadratic_difference")
 
-N = 1400000
+N = 4500000
 
 # try:
 #     x = np.load("x.npy")
