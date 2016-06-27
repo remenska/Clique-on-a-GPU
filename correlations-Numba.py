@@ -65,6 +65,7 @@ def main():
 
     N = 4500000
     N_light_crossing = 1500
+    km = 1e3
     # try:
     #     x = np.load("x.npy")
     #     y = np.load("y.npy")
@@ -74,11 +75,11 @@ def main():
     #     assert x.size == N
 
     # except (FileNotFoundError, AssertionError):
-    x = np.linspace(0, N_light_crossing, N)
-    y = np.linspace(0, N_light_crossing, N)
-    z = np.linspace(0, N_light_crossing, N)
+    x = np.linspace(0, N_light_crossing, N).astype(np.float32)
+    y = np.linspace(0, N_light_crossing, N).astype(np.float32)
+    z = np.linspace(0, N_light_crossing, N).astype(np.float32)
     #ct = 1000*np.linspace(0, 0.1, N).astype(np.float32)
-    ct = np.linspace(0, 0.1, N) * 300000000
+    ct = (3e8 * np.linspace(0, 0.1, N)).astype(np.float32)
 
     #np.save("x.npy", x)
     #np.save("y.npy", y)
@@ -182,7 +183,8 @@ def main():
         print('Index or indices where the difference is nonzero: ', (check-correlations).nonzero())
         print()
         print('check - correlations = ', check -correlations)
-    print("Percentage hits = {0} %".format(100 * np.sum(correlations / (correlations.shape[0] * correlations.shape[1]))))
+    print("Percentage hits = {0} %".format(100 * np.sum(correlations) / (correlations.shape[0] * correlations.shape[1])))
+    print("Number of correlations = %s " % np.sum(correlations))
 
 if __name__ == '__main__':
     main()
