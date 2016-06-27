@@ -186,8 +186,8 @@ def main():
         print('Index or indices where the difference is nonzero: ', (check-correlations).nonzero())
         print()
         print('check - correlations = ', check -correlations)
-    print("Percentage hits = {0} %".format(100 * np.sum(correlations) / (correlations.shape[0] * correlations.shape[1])))
-    print("Number of correlations = %s " % np.sum(correlations))
+    print("Percentage hits = {0} %".format(100 * np.sum(correlations) / correlations.shape[0]))
+    print("Number of correlated hits = %s " % np.sum(correlations))
 
 if __name__ == '__main__':
     main()
