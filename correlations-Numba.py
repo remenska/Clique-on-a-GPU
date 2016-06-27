@@ -64,7 +64,7 @@ def main():
     #end_computations   = cuda.event(timing = True)
 
     N = 4500000
-
+    N_light_crossing = 1500
     # try:
     #     x = np.load("x.npy")
     #     y = np.load("y.npy")
@@ -74,11 +74,11 @@ def main():
     #     assert x.size == N
 
     # except (FileNotFoundError, AssertionError):
-    x = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    y = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    z = np.random.normal(0.2, 0.1, N).astype(np.float32)
+    x = np.linspace(0, N_light_crossing, N)
+    y = np.linspace(0, N_light_crossing, N)
+    z = np.linspace(0, N_light_crossing, N)
     #ct = 1000*np.linspace(0, 0.1, N).astype(np.float32)
-    ct = 1000*np.random.normal(0.5, 0.06, N).astype(np.float32)
+    ct = np.linspace(0, 0.1, N) * 300000000
 
     #np.save("x.npy", x)
     #np.save("y.npy", y)
@@ -100,7 +100,7 @@ def main():
     print('Data transfer from host to device plus memory allocation on device took {0:.2e}s.'.format(end_transfer - start_transfer))
 
     # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
-    N_light_crossing = 1500
+    
 
     # This used to be 2 * N_light_crossing, but caused redundant calculations.
     sliding_window_width =  N_light_crossing
