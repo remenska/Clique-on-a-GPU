@@ -75,14 +75,18 @@ def main():
     #     assert x.size == N
 
     # except (FileNotFoundError, AssertionError):
-    x = np.linspace(0, km, N).astype(np.float32)
-    y = np.linspace(0, km, N).astype(np.float32)
-    z = np.linspace(0, km, N).astype(np.float32)
-    np.random.shuffle(x)
-    np.random.shuffle(y)
-    np.random.shuffle(z)
+    # x = np.linspace(0, km, N).astype(np.float32)
+    # y = np.linspace(0, km, N).astype(np.float32)
+    # z = np.linspace(0, km, N).astype(np.float32)
+    # np.random.shuffle(x)
+    # np.random.shuffle(y)
+    # np.random.shuffle(z)
     #ct = 1000*np.linspace(0, 0.1, N).astype(np.float32)
-    ct = (3e8 * np.linspace(0, 0.1, N)).astype(np.float32)
+    # ct = (3e8 * np.linspace(0, 0.1, N)).astype(np.float32)
+    x = np.random.rand(N).astype(np.float32)
+    y = np.random.rand(N).astype(np.float32)
+    z = np.random.rand(N).astype(np.float32)
+    ct = 1000 * np.random.rand(N).astype(np.float32)
 
     #np.save("x.npy", x)
     #np.save("y.npy", y)
