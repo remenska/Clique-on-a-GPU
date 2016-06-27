@@ -5,8 +5,8 @@ import time
 # block_size = 1024
 # block_size_x = int(np.sqrt(block_size))
 # block_size_y = int(np.sqrt(block_size))
-block_size_x = 8
-block_size_y = 16
+block_size_x = 3
+block_size_y = 3
 
 surrounding_hits_length = block_size_x + block_size_y - 1
 
@@ -63,7 +63,7 @@ def main():
     #start_computations = cuda.event(timing = True)
     #end_computations   = cuda.event(timing = True)
 
-    N = 4500000
+    N = 81
 
     # try:
     #     x = np.load("x.npy")
@@ -74,16 +74,20 @@ def main():
     #     assert x.size == N
 
     # except (FileNotFoundError, AssertionError):
-    x = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    y = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    z = np.random.normal(0.2, 0.1, N).astype(np.float32)
+    #x = np.random.normal(0.2, 0.1, N).astype(np.float32)
+    #y = np.random.normal(0.2, 0.1, N).astype(np.float32)
+    #z = np.random.normal(0.2, 0.1, N).astype(np.float32)
+    x = np.random.random(N).astype(np.float32)
+    y = np.random.random(N).astype(np.float32)
+    z = np.random.random(N).astype(np.float32)
+    ct = np.random.random(N).astype(np.float32)
     #ct = 1000*np.linspace(0, 0.1, N).astype(np.float32)
-    ct = 1000*np.random.normal(0.5, 0.06, N).astype(np.float32)
+    #ct = 1000*np.random.normal(0.5, 0.06, N).astype(np.float32)
 
-    #np.save("x.npy", x)
-    #np.save("y.npy", y)
-    #np.save("z.npy", z)
-    #np.save("ct.npy", ct)
+    np.save("x_small.npy", x)
+    np.save("y_small.npy", y)
+    np.save("z_small.npy", z)
+    np.save("ct_small.npy", ct)
 
     start_transfer = time.time()
 
@@ -100,7 +104,7 @@ def main():
     print('Data transfer from host to device plus memory allocation on device took {0:.2e}s.'.format(end_transfer - start_transfer))
 
     # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
-    N_light_crossing = 1500
+    N_light_crossing = 27
 
     # This used to be 2 * N_light_crossing, but caused redundant calculations.
     sliding_window_width =  N_light_crossing
@@ -138,7 +142,7 @@ def main():
 
     print()
     print('correlations = ', correlations)
-    #np.save("correlations.npy", correlations)
+    np.save("correlations_small.npy", correlations)
  
     # Speed up the CPU processing.
     @jit
