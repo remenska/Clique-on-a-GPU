@@ -78,6 +78,9 @@ def main():
     x = np.linspace(0, km, N).astype(np.float32)
     y = np.linspace(0, km, N).astype(np.float32)
     z = np.linspace(0, km, N).astype(np.float32)
+    np.random.shuffle(x)
+    np.random.shuffle(y)
+    np.random.shuffle(z)
     #ct = 1000*np.linspace(0, 0.1, N).astype(np.float32)
     ct = (3e8 * np.linspace(0, 0.1, N)).astype(np.float32)
 
