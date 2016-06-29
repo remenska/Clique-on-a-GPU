@@ -10,11 +10,12 @@ from pycuda.compiler import SourceModule
 import pycuda.driver
 
 mod = SourceModule("""
+#include <inttypes.h>
 #ifndef block_size_x
-    #define block_size_x 2
+    #define block_size_x 8
 #endif
 #ifndef block_size_y
-    #define block_size_y 32
+    #define block_size_y 16
 #endif
 
 __global__ void quadratic_difference(bool *correlations, int N, int sliding_window_width, float *x, float *y, float *z, float *ct)
@@ -28,7 +29,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
     if (i >= N || j >= sliding_window_width) return;
 
-    const unsigned long pos = i * sliding_window_width + j;
+    const uint64_t pos = i * (uint64_t)sliding_window_width + j;
 
     if (l >= N){
       return;
@@ -135,9 +136,9 @@ print("Number of bytes needed for the correlation matrix = {0:.3e} ".format(corr
 correlations_gpu = drv.mem_alloc(correlations.nbytes)
 drv.memcpy_htod(correlations_gpu, correlations)
 # block_size_x = int(np.sqrt(block_size))
-block_size_x = 2
+block_size_x = 8
 # block_size_y = int(np.sqrt(block_size))
-block_size_y = 32
+block_size_y = 16
 
 # block_size = block_size_x * block_size_y
 
