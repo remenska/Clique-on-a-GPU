@@ -10,6 +10,7 @@ from pycuda.compiler import SourceModule
 import pycuda.driver
 
 mod = SourceModule("""
+#include <inttypes.h>    
 #ifndef block_size_x
     #define block_size_x 2
 #endif
@@ -19,8 +20,8 @@ mod = SourceModule("""
 
 __global__ void quadratic_difference(bool *correlations, int N, int sliding_window_width, float *x, float *y, float *z, float *ct)
 {
-    unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned long j = blockIdx.y * blockDim.y + threadIdx.y;
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
 
     int l = i + j + 1;
 
@@ -28,10 +29,9 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
     if (i >= N || j >= sliding_window_width) return;
 
-    const unsigned long pos = i * sliding_window_width + j;
+    const unsigned long pos = j * (uint64_t)N + (uint64_t)i;
 
     if (l >= N){
-      correlations[pos] = 0;
       return;
     }
 
@@ -69,9 +69,6 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
       if (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz){ 
         correlations[pos] = 1;
       }
-      else{
-        correlations[pos] = 0;
-      }
     }
 
 
@@ -81,7 +78,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
 quadratic_difference= mod.get_function("quadratic_difference")
 
-N = 4500000
+N = np.int32(4.5e6)
 
 # try:
 #     x = np.load("x.npy")
@@ -130,7 +127,7 @@ print('Data transfer from host to device took {0:.2e}s.'.format(end_transfer -st
 # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
 N_light_crossing     = 1500
 # This used to be 2 * N_light_crossing, but caused redundant calculations.
-sliding_window_width = N_light_crossing
+sliding_window_width = np.int32(N_light_crossing)
 # problem_size = N * sliding_window_width
 
 correlations = np.zeros((N, sliding_window_width), 'b')
