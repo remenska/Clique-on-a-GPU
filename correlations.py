@@ -10,12 +10,11 @@ from pycuda.compiler import SourceModule
 import pycuda.driver
 
 mod = SourceModule("""
-#include <inttypes.h>    
 #ifndef block_size_x
-    #define block_size_x 8
+    #define block_size_x 2
 #endif
 #ifndef block_size_y
-    #define block_size_y 16
+    #define block_size_y 32
 #endif
 
 __global__ void quadratic_difference(bool *correlations, int N, int sliding_window_width, float *x, float *y, float *z, float *ct)
@@ -29,7 +28,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
     if (i >= N || j >= sliding_window_width) return;
 
-    const unsigned long pos = j * (uint64_t)N + (uint64_t)i;
+    const unsigned long pos = i * sliding_window_width + j;
 
     if (l >= N){
       return;
@@ -78,7 +77,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
 quadratic_difference= mod.get_function("quadratic_difference")
 
-N = np.int32(4.5e6)
+N = 4500000
 
 # try:
 #     x = np.load("x.npy")
@@ -127,18 +126,18 @@ print('Data transfer from host to device took {0:.2e}s.'.format(end_transfer -st
 # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
 N_light_crossing     = 1500
 # This used to be 2 * N_light_crossing, but caused redundant calculations.
-sliding_window_width = np.int32(N_light_crossing)
+sliding_window_width = N_light_crossing
 # problem_size = N * sliding_window_width
 
-correlations = np.zeros((sliding_window_width, N), 'b')
+correlations = np.zeros((N, sliding_window_width), 'b')
 print()
 print("Number of bytes needed for the correlation matrix = {0:.3e} ".format(correlations.nbytes))
 correlations_gpu = drv.mem_alloc(correlations.nbytes)
 drv.memcpy_htod(correlations_gpu, correlations)
 # block_size_x = int(np.sqrt(block_size))
-block_size_x = 8
+block_size_x = 2
 # block_size_y = int(np.sqrt(block_size))
-block_size_y = 16
+block_size_y = 32
 
 # block_size = block_size_x * block_size_y
 
