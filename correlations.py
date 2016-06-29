@@ -78,7 +78,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
 quadratic_difference= mod.get_function("quadratic_difference")
 
-N = 4500000
+N = np.int32(4.5e6)
 
 # try:
 #     x = np.load("x.npy")
@@ -127,7 +127,7 @@ print('Data transfer from host to device took {0:.2e}s.'.format(end_transfer -st
 # The number of consecutive hits corresponding to the light crossing time of the detector (1km/c).
 N_light_crossing     = 1500
 # This used to be 2 * N_light_crossing, but caused redundant calculations.
-sliding_window_width = N_light_crossing
+sliding_window_width = np.int32(N_light_crossing)
 # problem_size = N * sliding_window_width
 
 correlations = np.zeros((N, sliding_window_width), 'b')
