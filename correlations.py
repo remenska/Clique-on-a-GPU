@@ -29,7 +29,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
     if (i >= N || j >= sliding_window_width) return;
 
-    const uint64_t pos = i * (uint64_t)sliding_window_width + j;
+    const uint64_t pos =  j * ((uint64_t)N) + i;
 
     if (l >= N){
       return;
@@ -78,7 +78,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
 quadratic_difference= mod.get_function("quadratic_difference")
 
-N = np.int32(4.5e6)
+N = np.int32(4.5e3)
 
 # try:
 #     x = np.load("x.npy")
@@ -130,7 +130,7 @@ N_light_crossing     = 1500
 sliding_window_width = np.int32(N_light_crossing)
 # problem_size = N * sliding_window_width
 
-correlations = np.zeros((N, sliding_window_width), 'b')
+correlations = np.zeros((sliding_window_width, N), 'b')
 print()
 print("Number of bytes needed for the correlation matrix = {0:.3e} ".format(correlations.nbytes))
 correlations_gpu = drv.mem_alloc(correlations.nbytes)
