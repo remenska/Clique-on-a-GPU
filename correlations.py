@@ -29,7 +29,7 @@ __global__ void quadratic_difference(bool *correlations, int N, int sliding_wind
 
     if (i >= N || j >= sliding_window_width) return;
 
-    const uint64_t pos = i * (uint64_t)sliding_window_width + j;
+    const uint64_t pos = j * ((uint64_t)N) + i;
 
     if (l >= N){
       return;
