@@ -54,7 +54,7 @@ __global__ void quadratic_difference_linear(char *correlations, int N, int slidi
         if (bx+block_size_x+window_width-1 < N) {
 
             for (int j=0; j < window_width; j++) {
-                float diffct = ct_i - sh_ct[i+j];
+x                float diffct = ct_i - sh_ct[i+j];
                 float diffx  = x_i - sh_x[i+j];
                 float diffy  = y_i - sh_y[i+j];
                 float diffz  = z_i - sh_z[i+j];
@@ -93,6 +93,7 @@ __global__ void quadratic_difference_linear(char *correlations, int N, int slidi
 
 
 """)
+
 
 quadratic_difference_linear= mod.get_function("quadratic_difference_linear")
 
@@ -152,7 +153,7 @@ correlations = np.zeros((N, sliding_window_width), 'uint8')
 print()
 print("Number of bytes needed for the correlation matrix = {0:.3e} ".format(correlations.nbytes))
 correlations_gpu = drv.mem_alloc(correlations.nbytes)
-drv.memcpy_htod(correlations_gpu, correlations)
+# drv.memcpy_htod(correlations_gpu, correlations) # not needed
 # block_size_x = int(np.sqrt(block_size))
 block_size_x = 576
 # block_size_y = int(np.sqrt(block_size))
