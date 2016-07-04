@@ -54,7 +54,7 @@ __global__ void quadratic_difference_linear(char *correlations, int N, int slidi
         if (bx+block_size_x+window_width-1 < N) {
 
             for (int j=0; j < window_width; j++) {
-x                float diffct = ct_i - sh_ct[i+j];
+                float diffct = ct_i - sh_ct[i+j];
                 float diffx  = x_i - sh_x[i+j];
                 float diffy  = y_i - sh_y[i+j];
                 float diffz  = z_i - sh_z[i+j];
@@ -80,6 +80,8 @@ x                float diffct = ct_i - sh_ct[i+j];
                 uint64_t pos = j * ((uint64_t)N) + (bx+i);
                 if (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz) {
                     correlations[pos] = 1;
+                } else {
+                    correlations[pos] = 0;
                 }
 
             }
